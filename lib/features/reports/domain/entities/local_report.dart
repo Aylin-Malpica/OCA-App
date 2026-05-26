@@ -76,6 +76,12 @@ class LocalReport {
   @HiveField(23)
   final String numeroEmpleado;
 
+  @HiveField(24)
+  final int ubicacionTecnicaId;
+
+  @HiveField(25)
+  final String ubicacionTecnicaDescripcion;
+
   LocalReport({
     required this.reporteId,
     required this.usuarioMovilId,
@@ -101,6 +107,8 @@ class LocalReport {
     required this.evidenciasPaths,
     this.fechaActualizacion,
     required this.numeroEmpleado,
+    required this.ubicacionTecnicaId,
+    required this.ubicacionTecnicaDescripcion,
   });
 
   Map<String, dynamic> toJson() {
@@ -129,6 +137,8 @@ class LocalReport {
       "evidenciasPaths": evidenciasPaths,
       "fechaActualizacion": fechaActualizacion,
       "numeroEmpleado": numeroEmpleado,
+      "ubicacionTecnicaId":ubicacionTecnicaId,
+      "ubicacionTecnicaDescripcion": ubicacionTecnicaDescripcion,
     };
   }
 
@@ -157,6 +167,8 @@ class LocalReport {
     List<String>? evidenciasPaths,
     String? fechaActualizacion,
     String? numeroEmpleado,
+    int ? ubicacionTecnicaId,
+    String ? ubicacionTecnicaDescripcion,
   }) {
     return LocalReport(
       reporteId: reporteId ?? this.reporteId,
@@ -190,6 +202,8 @@ class LocalReport {
       evidenciasPaths: evidenciasPaths ?? this.evidenciasPaths,
       fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
       numeroEmpleado: numeroEmpleado ?? this.numeroEmpleado,
+      ubicacionTecnicaId: ubicacionTecnicaId ?? this.ubicacionTecnicaId,
+      ubicacionTecnicaDescripcion: ubicacionTecnicaDescripcion ?? this.ubicacionTecnicaDescripcion,
     );
   }
 }

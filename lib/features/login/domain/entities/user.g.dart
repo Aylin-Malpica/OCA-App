@@ -27,13 +27,13 @@ class UserAdapter extends TypeAdapter<User> {
       unidadNegocioId: fields[7] as int,
       activo: fields[8] as bool,
       numeroEmpleado: fields[9] as String,
-    );
+    )..lastSync = fields[10] as DateTime?;
   }
 
   @override
   void write(BinaryWriter writer, User obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.usuarioId)
       ..writeByte(1)
@@ -53,7 +53,9 @@ class UserAdapter extends TypeAdapter<User> {
       ..writeByte(8)
       ..write(obj.activo)
       ..writeByte(9)
-      ..write(obj.numeroEmpleado);
+      ..write(obj.numeroEmpleado)
+      ..writeByte(10)
+      ..write(obj.lastSync);
   }
 
   @override

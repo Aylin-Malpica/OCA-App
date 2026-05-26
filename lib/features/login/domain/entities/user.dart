@@ -34,6 +34,9 @@ class User {
   @HiveField(9)
   final String numeroEmpleado;
 
+  @HiveField(10)
+  DateTime? lastSync;
+
   User({
     required this.usuarioId,
     required this.nombreUsuario,

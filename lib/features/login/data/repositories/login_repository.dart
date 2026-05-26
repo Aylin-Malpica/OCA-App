@@ -19,8 +19,6 @@ class LoginRepository {
   Future<LoginResult> verifyEmployee(String employeeId) async {
 
     final hasInternet = await NetworkInfo().hasInternet();
-
-    /// 🔥 SI NO HAY INTERNET → SOLO LOCAL
     if (!hasInternet) {
       final localUser = await local.getUserByEmployee(employeeId);
 
@@ -31,7 +29,6 @@ class LoginRepository {
       return LoginResult("no_internet_no_user", null);
     }
 
-    /// 🔥 SI HAY INTERNET → FLUJO NORMAL
     final localUser = await local.getUserByEmployee(employeeId);
 
     if (localUser != null) {
@@ -74,24 +71,17 @@ class LoginRepository {
     print("Empleado enviado a verifyEmployee: '$nombreUsuario'");
 
     if (nombreUsuario.trim().isEmpty) {
-      print("❌ NUMERO EMPLEADO VACÍO");
       return null;
     }
 
     final response = await remote.verifyEmployee(nombreUsuario);
 
-    print("🔵 RESPONSE RAW:");
-    print(response);
 
     if (response == null) {
-      print("❌ RESPONSE NULL");
       return null;
     }
 
     final data = response["data"];
-
-    print("🔵 DATA:");
-    print(data);
 
     if (data == null) {
       print("❌ DATA NULL");

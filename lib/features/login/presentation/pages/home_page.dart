@@ -1,4 +1,5 @@
 import 'package:app_oca/features/reports/data/datasources/elements_detail_local_datasource.dart';
+import 'package:app_oca/features/reports/data/datasources/technical_location_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
@@ -18,6 +19,7 @@ import '../../../reports/data/datasources/report_elements_local_datasource.dart'
 import '../../../reports/data/datasources/reports_local_datasource.dart';
 import '../../../reports/data/datasources/risk_levels_local_datasource.dart';
 import '../../../reports/domain/entities/local_report.dart';
+import '../../../reports/domain/entities/technical_location.dart';
 import '../../../reports/presentation/report_page.dart';
 import '../../../reports/data/datasources/local_reports_local_datasource.dart';
 import '../../../reports/data/datasources/reports_remote_datasource.dart';
@@ -92,7 +94,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> loadLastSync() async {
     final storage = SyncStorage();
-    final date = await storage.getLastSyncUiDate();
+    final date = await storage.getLastSyncUiDate(currentUser.numeroEmpleado);
 
     if (date != null && mounted) {
       setState(() {
@@ -141,6 +143,7 @@ class _HomePageState extends State<HomePage> {
         IncidentTypesLocalDatasource(),
         ElementDetailsLocalDatasource(),
         ElementsLocalDatasource(),
+        TechnicalLocationsLocalDatasource(),
       );
 
       final storage = SyncStorage();
@@ -151,7 +154,7 @@ class _HomePageState extends State<HomePage> {
         throw Exception("El usuario no tiene unidad de negocio asignada.");
       }
 
-      final lastBackendDate = await storage.getLastBackendUpdateDate();
+      final lastBackendDate = await storage.getLastBackendUpdateDate(currentUser.numeroEmpleado);
       final fechaConsulta = lastBackendDate ?? "2026-01-01T00:00:00";
 
       print("FECHA CONSULTA SYNC: $fechaConsulta");
@@ -233,8 +236,15 @@ class _HomePageState extends State<HomePage> {
       final backendFormatted = DateFormat("yyyy-MM-ddTHH:mm:ss").format(now);
       final uiFormatted = DateFormat("dd/MM/yyyy hh:mm a").format(now);
 
-      await storage.saveLastBackendUpdateDate(backendFormatted);
-      await storage.saveLastSyncUiDate(uiFormatted);
+      await storage.saveLastBackendUpdateDate(
+        backendFormatted,
+        currentUser.numeroEmpleado,
+      );
+
+      await storage.saveLastSyncUiDate(
+        uiFormatted,
+        currentUser.numeroEmpleado,
+      );
 
       if (!mounted) return;
 
@@ -512,207 +522,183 @@ class _HomePageState extends State<HomePage> {
                 )
               ],
             ),
-            body: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Card(
-                    elevation: 6,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const CircleAvatar(
-                                radius: 30,
-                                child: Icon(Icons.person, size: 30),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      user.nombreCompleto,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
+            body: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Card(
+                      elevation: 6,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const CircleAvatar(
+                                  radius: 30,
+                                  child: Icon(Icons.person, size: 30),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        user.nombreCompleto,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      user.correo,
-                                      style: const TextStyle(
-                                        color: Colors.grey,
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        user.correo,
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-
-                          const SizedBox(height: 20),
-                          const Divider(),
-                          const SizedBox(height: 10),
-
-                          Row(
-                            children: [
-                              const Icon(Icons.badge),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  "No. empleado: ${user.nombreUsuario}",
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              )
-                            ],
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          Row(
-                            children: [
-                              const Icon(Icons.apartment),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  "Departamento: ${user.departamento}",
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              )
-                            ],
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  "Localidad: ${user.localidad}",
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              )
-                            ],
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          Row(
-                            children: [
-                              const Icon(Icons.business),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  "Unidad de negocio: $unidadNegocio",
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              )
-                            ],
-                          ),
-
-                          const SizedBox(height: 16),
-                          const Divider(),
-                          const SizedBox(height: 10),
-
-                          Row(
-                            children: [
-                              const Icon(Icons.sync),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    "Última sincronización",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    lastSync,
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                    ),
+                                )
+                              ],
+                            ),
+
+                            const SizedBox(height: 20),
+                            const Divider(),
+                            const SizedBox(height: 10),
+
+                            _infoRow(
+                              icon: Icons.badge,
+                              text: "No. empleado: ${user.nombreUsuario}",
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _infoRow(
+                              icon: Icons.apartment,
+                              text: "Departamento: ${user.departamento}",
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _infoRow(
+                              icon: Icons.location_on,
+                              text: "Localidad: ${user.localidad}",
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _infoRow(
+                              icon: Icons.business,
+                              text: "Unidad de negocio: $unidadNegocio",
+                            ),
+
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 10),
+
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.sync),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "Última sincronización",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        lastSync,
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              )
-                            ],
-                          ),
-                        ],
+                                )
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.assignment_outlined),
-                              const SizedBox(width: 8),
-                              const Text(
-                                "Mis reportes",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.assignment_outlined),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Mis reportes",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            Text(
+                              "${draftReports.length} pendiente(s) por enviar",
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey,
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: draftReports.isEmpty ? null : sendAllDrafts,
+                                icon: const Icon(Icons.send),
+                                label: Text(
+                                  "${draftReports.length} pendiente(s) por enviar",
                                 ),
                               ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          Text(
-                            "${draftReports.length} pendiente(s) por enviar",
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey,
                             ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: draftReports.isEmpty ? null : sendAllDrafts,
-                              icon: const Icon(Icons.send),
-                              label: Text("${draftReports.length} pendiente(s) por enviar"),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 25),
+                    const SizedBox(height: 25),
 
-                  /// MENU TIPO GALERIA
-                  Expanded(
-                    child: GridView.count(
-                      crossAxisCount:
-                      MediaQuery.of(context).size.width > 600 ? 3 : 2,
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
+                      childAspectRatio: MediaQuery.of(context).size.width > 600
+                          ? 1.2
+                          : 1.05,
                       children: [
                         _menuItem(
                           context: context,
@@ -758,8 +744,7 @@ class _HomePageState extends State<HomePage> {
                                         "¿Deseas sincronizar la información ahora?\n\n",
                                       ),
                                       TextSpan(
-                                        text:
-                                        "Se requiere conexión a internet.",
+                                        text: "Se requiere conexión a internet.",
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -816,13 +801,15 @@ class _HomePageState extends State<HomePage> {
                               ),
                             );
 
-                            await loadDrafts(); // 🔥 ESTA ES LA CLAVE
+                            await loadDrafts();
                           },
                         ),
                       ],
                     ),
-                  )
-                ],
+
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ),
@@ -894,6 +881,25 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+Widget _infoRow({
+  required IconData icon,
+  required String text,
+}) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          text,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ),
+    ],
+  );
+}
+//
 Widget _menuItem({
   required BuildContext context,
   required IconData icon,

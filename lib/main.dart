@@ -1,3 +1,4 @@
+import 'package:app_oca/features/login/presentation/pages/userType_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -13,6 +14,7 @@ import 'features/reports/domain/entities/report_category.dart';
 import 'features/reports/domain/entities/report_type.dart';
 import 'features/reports/domain/entities/report_element.dart';
 import 'features/reports/domain/entities/risk_level.dart';
+import 'features/reports/domain/entities/technical_location.dart';
 
 void main() async {
 
@@ -31,11 +33,13 @@ void main() async {
   Hive.registerAdapter(LocalReportAdapter());
   Hive.registerAdapter(ElementoAdapter());
   Hive.registerAdapter(ElementoDetalleAdapter());
+  Hive.registerAdapter(TechnicalLocationAdapter());
 
   /// 🔥 ABRIR BOXES IMPORTANTES
   await Hive.openBox<User>("users");
   print("🟢 BOX USERS ABIERTO");
   await Hive.openBox<LocalReport>("local_reports");
+  await Hive.openBox<TechnicalLocation>("technical_locations");
 
   /// 🔥 ENV
   await dotenv.load(fileName: ".env");
@@ -54,7 +58,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LoginPage(),
+      home: const UserTypePage(),
     );
 
   }

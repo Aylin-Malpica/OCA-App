@@ -162,76 +162,121 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void dispose() {
+    employeeController.dispose();
+    super.dispose();
+  }
 
-    final width = MediaQuery.of(context).size.width;
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+    final bool isSmallPhone = height < 700;
+    final bool isTablet = width > 600;
 
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
 
       body: Stack(
         children: [
-
-          Center(
-            child: Container(
-              width: width > 500 ? 400 : width * 0.9,
-              padding: const EdgeInsets.all(24),
-
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-
-                  Image.asset(
-                    "assets/images/observa.png",
-                    height: 250,
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 16,
+                    bottom: keyboardHeight + 24,
                   ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: isTablet ? 420 : double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallPhone ? 12 : 24,
+                          vertical: isSmallPhone ? 16 : 24,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(
+                              "assets/images/observa.png",
+                              height: isSmallPhone
+                                  ? 140
+                                  : isTablet
+                                  ? 250
+                                  : 190,
+                              fit: BoxFit.contain,
+                            ),
 
-                  const SizedBox(height: 20),
+                            SizedBox(height: isSmallPhone ? 12 : 20),
 
-                  const Text(
-                    "Bienvenido",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                            const Text(
+                              "Bienvenido",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            const Text(
+                              "Ingresa tu número de empleado",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+
+                            SizedBox(height: isSmallPhone ? 20 : 30),
+
+                            TextField(
+                              controller: employeeController,
+                              keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) {
+                                if (!loading) {
+                                  verifyEmployee();
+                                }
+                              },
+                              decoration: const InputDecoration(
+                                labelText: "Número de empleado",
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: loading ? null : verifyEmployee,
+                                child: const Text("Continuar"),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  const Text(
-                    "Ingresa tu número de empleado",
-                    style: TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  TextField(
-                    controller: employeeController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: "Número de empleado",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: loading ? null : verifyEmployee,
-                      child: const Text("Continuar"),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
 
-          /// 🔥 LOADING
           if (loading)
             Container(
               color: Colors.black.withOpacity(0.3),

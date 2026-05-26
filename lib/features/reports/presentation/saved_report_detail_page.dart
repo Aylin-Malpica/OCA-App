@@ -252,6 +252,7 @@ class _SavedReportDetailPageState
                 infoRow("Tipo de reporte", r.reportElementDescription),
                 infoRow("Tipo de elemento", r.elementTypeDescription),
                 infoRow("Elemento", r.elementoIdentificador),
+                infoRow("Ubicación técnica", r.ubicacionTecnicaDescripcion),
               ],
             ),
             icon: Icons.description_outlined,

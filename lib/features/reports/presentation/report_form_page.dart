@@ -14,7 +14,8 @@ import '../data/datasources/reports_remote_datasource.dart';
 import '../data/datasources/risk_levels_local_datasource.dart';
 import '../data/datasources/incident_types_local_datasource.dart';
 import '../data/datasources/local_reports_local_datasource.dart';
-
+import 'package:permission_handler/permission_handler.dart';
+import '../data/datasources/technical_location_datasource.dart';
 import '../domain/entities/element_detail.dart';
 import '../domain/entities/report_type.dart';
 import '../domain/entities/report_element.dart';
@@ -23,6 +24,7 @@ import '../domain/entities/custom_field.dart';
 import '../domain/entities/risk_level.dart';
 import '../domain/entities/incident_type.dart';
 import '../domain/entities/local_report.dart';
+import '../domain/entities/technical_location.dart';
 
 class ReportFormPage extends StatefulWidget {
   final User user;
@@ -51,6 +53,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
   final localReportsLocal = LocalReportsLocalDatasource();
   final elementDetailsLocal = ElementDetailsLocalDatasource();
   final locationService = LocationService();
+  final technicalLocationsLocal = TechnicalLocationsLocalDatasource();
 
   late ReportsRemoteDatasource reportsRemote;
 
@@ -60,13 +63,15 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
   List<ReportElement> reportElements = [];
   ReportElement? selectedReportElement;
-
   List<Elemento> elementos = [];
   Elemento? selectedElemento;
 
   List<CustomField> customFields = [];
   List<RiskLevel> riskLevels = [];
   List<IncidentType> incidentTypes = [];
+
+  List<TechnicalLocation> technicalLocations = [];
+  TechnicalLocation? selectedTechnicalLocation;
 
   final Map<int, TextEditingController> controllers = {};
 
@@ -88,6 +93,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
     reportsRemote = ReportsRemoteDatasource(ApiClient());
 
     loadInitialData();
+    loadTechnicalLocations();
 
     if (widget.editingReport != null) {
       loadEditingData();
@@ -270,9 +276,35 @@ class _ReportFormPageState extends State<ReportFormPage> {
     });
   }
 
+  Future<void> loadTechnicalLocations() async {
+
+    final all =
+    await technicalLocationsLocal.getTechnicalLocations();
+
+    if (!mounted) return;
+
+    setState(() {
+      technicalLocations = all;
+    });
+  }
+
+
+
   Future<void> takePhoto() async {
     if (evidencias.length >= 5) {
       showMsg("Máximo 5 fotos permitidas");
+      return;
+    }
+
+    final status = await Permission.camera.request();
+
+    if (!status.isGranted) {
+      if (status.isPermanentlyDenied) {
+        showMsg("El permiso de cámara está bloqueado. Actívalo desde configuración.");
+        await openAppSettings();
+      } else {
+        showMsg("Se necesita permiso de cámara para tomar evidencias.");
+      }
       return;
     }
 
@@ -322,6 +354,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
           };
         }).toList(),
         "fechaRegistro": now(),
+        "ubicacionTecnicaId":
+        selectedTechnicalLocation!.ubicacionTecnicaId,
       };
 
       /*print("========== JSON REPORTE ==========");
@@ -425,6 +459,11 @@ class _ReportFormPageState extends State<ReportFormPage> {
         evidenciasPaths:
         evidencias.map((e) => e.path).toList(),
         fechaActualizacion: now(),
+        ubicacionTecnicaId:
+        selectedTechnicalLocation!.ubicacionTecnicaId,
+
+        ubicacionTecnicaDescripcion:
+        selectedTechnicalLocation!.denominacion,
       );
 
       if (widget.editingReport != null &&
@@ -542,18 +581,32 @@ class _ReportFormPageState extends State<ReportFormPage> {
                 children: [
                   DropdownButtonFormField<ReportElement>(
                     value: selectedReportElement,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: "Tipo de reporte",
                       border: OutlineInputBorder(),
                     ),
                     items: reportElements.map((e) {
-                      return DropdownMenuItem(
+                      return DropdownMenuItem<ReportElement>(
                         value: e,
                         child: Text(
                           e.reporteTipoElementoDescripcion,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
                         ),
                       );
                     }).toList(),
+                    selectedItemBuilder: (context) {
+                      return reportElements.map((e) {
+                        return Text(
+                          e.reporteTipoElementoDescripcion,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        );
+                      }).toList();
+                    },
                     onChanged: (value) async {
                       if (value == null) return;
 
@@ -563,8 +616,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                       }
 
                       if (hasFormChanges) {
-                        final confirmed =
-                        await confirmChangeReportType();
+                        final confirmed = await confirmChangeReportType();
                         if (!confirmed) return;
                       }
 
@@ -765,7 +817,53 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   ),
 
                   const SizedBox(height: 20),
+                  DropdownButtonFormField<TechnicalLocation>(
+                    value: selectedTechnicalLocation,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: "Ubicación técnica",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: technicalLocations.map((location) {
+                      final text =
+                          "${location.claveUbicacionTecnica} - ${location.denominacion}";
 
+                      return DropdownMenuItem<TechnicalLocation>(
+                        value: location,
+                        child: Text(
+                          text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        ),
+                      );
+                    }).toList(),
+                    selectedItemBuilder: (context) {
+                      return technicalLocations.map((location) {
+                        final text =
+                            "${location.claveUbicacionTecnica} - ${location.denominacion}";
+
+                        return Text(
+                          text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        );
+                      }).toList();
+                    },
+                    onChanged: (value) {
+                      setState(() {
+                        selectedTechnicalLocation = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null) {
+                        return "Selecciona una ubicación técnica";
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
                   ...customFields.map((f) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -966,6 +1064,13 @@ class _ReportFormPageState extends State<ReportFormPage> {
           campo["valor"] ?? "";
     }
 
+    selectedTechnicalLocation =
+        technicalLocations.firstWhere(
+              (e) =>
+          e.ubicacionTecnicaId ==
+              r.ubicacionTecnicaId,
+        );
+
     if (!mounted) return;
 
     setState(() {});
@@ -1024,6 +1129,11 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     if (selectedIncidentTypeId == null) {
       showMsg("Selecciona tipo incidencia");
+      return false;
+    }
+
+    if (selectedTechnicalLocation == null) {
+      showMsg("Selecciona ubicación técnica");
       return false;
     }
 

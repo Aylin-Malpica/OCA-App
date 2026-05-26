@@ -98,92 +98,140 @@ class _PasswordPageState extends State<PasswordPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void dispose() {
+    passwordController.dispose();
+    super.dispose();
+  }
 
-    final width = MediaQuery.of(context).size.width;
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+    final bool isSmallPhone = height < 700;
+    final bool isTablet = width > 600;
 
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
 
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
 
       body: Stack(
         children: [
-          Center(
-            child: Container(
-              width: width > 500 ? 400 : width * 0.9,
-              padding: const EdgeInsets.all(24),
-
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-
-                  Image.asset(
-                    "assets/images/observa.png",
-                    height: 250,
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 16,
+                    bottom: keyboardHeight + 24,
                   ),
-
-                  const SizedBox(height: 20),
-
-                  Text(
-                    "Hola ${widget.user.nombreCompleto}",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
                     ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  const Text(
-                    "Por favor ingresa tu contraseña",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  TextField(
-                    controller: passwordController,
-                    obscureText: obscure,
-                    decoration: InputDecoration(
-                      labelText: "Contraseña",
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          obscure
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                    child: Center(
+                      child: Container(
+                        width: isTablet ? 420 : double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallPhone ? 12 : 24,
+                          vertical: isSmallPhone ? 16 : 24,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            obscure = !obscure;
-                          });
-                        },
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(
+                              "assets/images/observa.png",
+                              height: isSmallPhone
+                                  ? 120
+                                  : isTablet
+                                  ? 250
+                                  : 180,
+                              fit: BoxFit.contain,
+                            ),
+
+                            SizedBox(height: isSmallPhone ? 12 : 20),
+
+                            Text(
+                              "Hola ${widget.user.nombreCompleto}",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: isSmallPhone ? 20 : 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            const Text(
+                              "Por favor ingresa tu contraseña",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+
+                            SizedBox(height: isSmallPhone ? 24 : 40),
+
+                            TextField(
+                              controller: passwordController,
+                              obscureText: obscure,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) {
+                                if (!loading) {
+                                  login();
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: "Contraseña",
+                                border: const OutlineInputBorder(),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    obscure
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      obscure = !obscure;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: loading ? null : login,
+                                child: const Text("Ingresar"),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: loading ? null : login,
-                      child: const Text("Ingresar"),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
 
-          /// 🔥 LOADING BONITO
           if (loading)
             Container(
               color: Colors.black.withOpacity(0.3),

@@ -4,12 +4,14 @@ import '../../../reports/data/datasources/elements_local_datasource.dart';
 import '../../../reports/data/datasources/incident_types_local_datasource.dart';
 import '../../../reports/data/datasources/report_elements_local_datasource.dart';
 import '../../../reports/data/datasources/risk_levels_local_datasource.dart';
+import '../../../reports/data/datasources/technical_location_datasource.dart';
 import '../../../reports/domain/entities/custom_field.dart';
 import '../../../reports/domain/entities/element.dart';
 import '../../../reports/domain/entities/element_detail.dart';
 import '../../../reports/domain/entities/incident_type.dart';
 import '../../../reports/domain/entities/report_element.dart';
 import '../../../reports/domain/entities/risk_level.dart';
+import '../../../reports/domain/entities/technical_location.dart';
 import '../datasources/sync_remote_datasource.dart';
 
 import '../../../reports/data/datasources/reports_local_datasource.dart';
@@ -27,6 +29,7 @@ class SyncRepository {
   final IncidentTypesLocalDatasource incidentTypesLocal;
   final ElementsLocalDatasource elementsCatalogLocal;
   final ElementDetailsLocalDatasource elementDetailsLocal;
+  final TechnicalLocationsLocalDatasource technicalLocationsLocal;
 
   SyncRepository(
       this.remote,
@@ -37,7 +40,8 @@ class SyncRepository {
       this.riskLevelsLocal,
       this.incidentTypesLocal,
       this.elementDetailsLocal,
-      this.elementsCatalogLocal
+      this.elementsCatalogLocal,
+      this.technicalLocationsLocal,
       );
 
   Future<void> syncAllCatalogs({
@@ -56,18 +60,6 @@ class SyncRepository {
         .toList();
 
     await reportsLocal.saveReportTypes(reportTypes);
-
-    /*final categoriesData = await remote.syncCatalog(
-      endpoint: "catalogos/tipos-reporte",
-      unidadNegocioId: unidadNegocioId,
-      fechaActualizacion: fechaActualizacion,
-    );
-
-    final reportCategories = categoriesData
-        .map((e) => ReportCategory.fromJson(e))
-        .toList();
-
-    await categoriesLocal.saveReportCategories(reportCategories);*/
 
     final reportElementsData = await remote.syncCatalog(
       endpoint: "catalogos/reportes-tipo-elemento",
@@ -140,6 +132,18 @@ class SyncRepository {
         .toList();
 
     await elementDetailsLocal.saveElementDetails(elementosDetalles);
+
+    final technicalLocationsData = await remote.syncCatalog(
+      endpoint: "catalogos/ubicaciones-tecnicas",
+      unidadNegocioId: unidadNegocioId,
+      fechaActualizacion: fechaActualizacion,
+    );
+
+    final technicalLocations = technicalLocationsData
+        .map((e) => TechnicalLocation.fromJson(e))
+        .toList();
+
+    await technicalLocationsLocal.saveTechnicalLocations(technicalLocations);
 
     print("SINCRONIZACIÓN COMPLETA");
   }

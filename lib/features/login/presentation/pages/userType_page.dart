@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'external_register_page.dart';
+import '../../../external_register/presentation/pages/external_register_page.dart';
 import 'login_page.dart';
 
 class UserTypePage extends StatelessWidget {
@@ -25,10 +25,10 @@ class UserTypePage extends StatelessWidget {
             final containerWidth = width > 500 ? 400.0 : width * 0.9;
 
             final logoHeight = isSmallHeight
-                ? 150.0
+                ? 140.0
                 : isPhone
-                ? 210.0
-                : 230.0;
+                ? 200.0
+                : 220.0;
 
             final titleSize = isSmallHeight ? 24.0 : 30.0;
             final subtitleSize = isSmallHeight ? 16.0 : 20.0;
@@ -105,7 +105,7 @@ class UserTypePage extends StatelessWidget {
                           _AccessTypeButton(
                             icon: Icons.person_outline,
                             title: "Usuario externo",
-                            subtitle: "Acceso para personal externo autorizado",
+                            subtitle: "Solicita acceso como personal externo",
                             primaryColor: primaryColor,
                             isCompact: isSmallHeight,
                             onTap: () {
@@ -113,6 +113,24 @@ class UserTypePage extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => const ExternalRegisterPage(),
+                                ),
+                              );
+                            },
+                          ),
+
+                          SizedBox(height: cardSpacing),
+
+                          _AccessTypeButton(
+                            icon: Icons.login_outlined,
+                            title: "Ya tengo cuenta",
+                            subtitle: "Inicia sesión con tu usuario registrado",
+                            primaryColor: primaryColor,
+                            isCompact: isSmallHeight,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginPage(),
                                 ),
                               );
                             },
@@ -191,9 +209,7 @@ class _AccessTypeButton extends StatelessWidget {
                   color: primaryColor,
                 ),
               ),
-
               const SizedBox(width: 16),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,9 +224,7 @@ class _AccessTypeButton extends StatelessWidget {
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-
                     const SizedBox(height: 4),
-
                     Text(
                       subtitle,
                       maxLines: 2,
@@ -223,9 +237,7 @@ class _AccessTypeButton extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(width: 8),
-
               Icon(
                 Icons.arrow_forward_ios,
                 size: 20,
@@ -238,3 +250,4 @@ class _AccessTypeButton extends StatelessWidget {
     );
   }
 }
+

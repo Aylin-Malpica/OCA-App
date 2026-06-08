@@ -233,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 8),
 
                             const Text(
-                              "Ingresa tu número de empleado",
+                              "Ingresa tu nombre de usuario",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.grey,
@@ -244,7 +244,7 @@ class _LoginPageState extends State<LoginPage> {
 
                             TextField(
                               controller: employeeController,
-                              keyboardType: TextInputType.number,
+
                               textInputAction: TextInputAction.done,
                               onSubmitted: (_) {
                                 if (!loading) {
@@ -252,7 +252,7 @@ class _LoginPageState extends State<LoginPage> {
                                 }
                               },
                               decoration: const InputDecoration(
-                                labelText: "Número de empleado",
+                                labelText: "Nombre de usuario",
                                 border: OutlineInputBorder(),
                               ),
                             ),

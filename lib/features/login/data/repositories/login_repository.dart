@@ -17,6 +17,7 @@ class LoginRepository {
   LoginRepository(this.remote, this.local);
 
   Future<LoginResult> verifyEmployee(String employeeId) async {
+    print("aylin");
 
     final hasInternet = await NetworkInfo().hasInternet();
     if (!hasInternet) {

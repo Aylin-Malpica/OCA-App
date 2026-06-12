@@ -176,4 +176,77 @@ class ExternalRegisterRemoteDatasource {
           "No se pudo registrar el usuario externo",
     );
   }
+
+  Future<Map<String, dynamic>> registerInternalUser({
+    required String numeroEmpleado,
+    required String correo,
+    required String contrasenia,
+    required int departamentoId,
+    required int ubicacionTecnicaId,
+  }) async {
+    if (baseURL == null || baseURL!.isEmpty) {
+      throw Exception("BASE_URL no está configurado en el .env");
+    }
+
+    final token = await tokenService.getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception("No se pudo obtener token");
+    }
+
+    final uri = Uri.parse(
+      "$baseURL/auth/usuarios-moviles/registrar-interno",
+    );
+
+    final Map<String, dynamic> body = {
+      "numeroEmpleado": numeroEmpleado,
+      "contrasenia": contrasenia,
+      "departamentoId": departamentoId,
+      "ubicacionTecnicaId": ubicacionTecnicaId,
+    };
+
+    if (correo.trim().isNotEmpty) {
+      body["correo"] = correo.trim();
+    }
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(body),
+    );
+
+    print("REGISTER INTERNAL URL: $uri");
+    print("REGISTER INTERNAL STATUS: ${response.statusCode}");
+    print("REGISTER INTERNAL BODY REQUEST: ${jsonEncode(body)}");
+    print("REGISTER INTERNAL BODY RESPONSE: [${response.body}]");
+
+    Map<String, dynamic>? data;
+
+    if (response.body.trim().isNotEmpty) {
+      try {
+        data = jsonDecode(response.body);
+      } catch (e) {
+        print("REGISTER INTERNAL JSON DECODE ERROR: $e");
+      }
+    }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return data ??
+          {
+            "success": true,
+            "message": "Registro completado correctamente.",
+            "data": true,
+          };
+    }
+
+    final errorMessage = data?["message"] ??
+        data?["title"] ??
+        "No se pudo registrar el usuario interno. Código: ${response.statusCode}";
+
+    throw Exception(errorMessage);
+  }
 }

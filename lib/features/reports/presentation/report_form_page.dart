@@ -25,6 +25,7 @@ import '../domain/entities/risk_level.dart';
 import '../domain/entities/incident_type.dart';
 import '../domain/entities/local_report.dart';
 import '../domain/entities/technical_location.dart';
+import '../../../../core/app_theme.dart';
 
 class ReportFormPage extends StatefulWidget {
   final User user;
@@ -551,7 +552,41 @@ class _ReportFormPageState extends State<ReportFormPage> {
       await saveOrSend(send: true);
     }
   }
-
+  InputDecoration _inputDecoration({
+    required String label,
+    IconData? icon,
+    String? hint,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: icon == null
+          ? null
+          : Icon(
+        icon,
+        color: AppTheme.dorado,
+      ),
+      labelStyle: const TextStyle(
+        color: AppTheme.textColor,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: AppTheme.dorado,
+          width: 1.5,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: AppTheme.dorado.withOpacity(0.35),
+        ),
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -582,9 +617,9 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   DropdownButtonFormField<ReportElement>(
                     value: selectedReportElement,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: "Tipo de reporte",
-                      border: OutlineInputBorder(),
+                    decoration: _inputDecoration(
+                      label: "Tipo de reporte",
+                      icon: Icons.assignment_outlined,
                     ),
                     items: reportElements.map((e) {
                       return DropdownMenuItem<ReportElement>(
@@ -669,11 +704,10 @@ class _ReportFormPageState extends State<ReportFormPage> {
                       return TextField(
                         controller: textEditingController,
                         focusNode: focusNode,
-                        decoration: const InputDecoration(
-                          labelText: "Elemento",
-                          hintText: "Escribe para buscar",
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.search),
+                        decoration: _inputDecoration(
+                          label: "Elemento",
+                          hint: "Escribe para buscar",
+                          icon: Icons.search,
                         ),
                       );
                     },
@@ -714,9 +748,15 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   if (selectedElemento != null) ...[
                     const SizedBox(height: 16),
                     Card(
-                      elevation: 4,
+                      elevation: 2,
+                      color: Colors.white,
+                      shadowColor: AppTheme.dorado.withOpacity(0.18),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(
+                          color: AppTheme.dorado.withOpacity(0.30),
+                          width: 1,
+                        ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
@@ -725,49 +765,65 @@ class _ReportFormPageState extends State<ReportFormPage> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.info_outline),
-                                const SizedBox(width: 8),
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.dorado.withOpacity(0.14),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.info_outline,
+                                    color: AppTheme.dorado,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     "Detalle del elemento",
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
+                                      color: AppTheme.marBaltico,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 14),
                             Text(
                               "Código: ${selectedElemento!.identificador}",
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
+                                color: AppTheme.marBaltico,
                               ),
                             ),
                             const SizedBox(height: 10),
                             if (selectedElementDetails.isEmpty)
                               const Text(
                                 "Sin detalles disponibles",
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(color: AppTheme.textColor),
                               )
                             else
                               ...selectedElementDetails.map((detail) {
                                 return Padding(
-                                  padding:
-                                  const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.only(bottom: 8),
                                   child: Row(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text("• "),
+                                      const Text(
+                                        "• ",
+                                        style: TextStyle(
+                                          color: AppTheme.dorado,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                       Expanded(
                                         child: Text(
                                           "${detail.valor}: ${detail.descripcion}",
                                           style: const TextStyle(
-                                              fontSize: 14),
+                                            fontSize: 14,
+                                            color: AppTheme.textColor,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -784,9 +840,9 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
                   DropdownButtonFormField<int>(
                     value: selectedIncidentTypeId,
-                    decoration: const InputDecoration(
-                      labelText: "Tipo incidencia",
-                      border: OutlineInputBorder(),
+                    decoration: _inputDecoration(
+                      label: "Tipo incidencia",
+                      icon: Icons.warning_amber_outlined,
                     ),
                     items: incidentTypes.map((e) {
                       return DropdownMenuItem(
@@ -802,9 +858,9 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
                   DropdownButtonFormField<int>(
                     value: selectedRiskLevelId,
-                    decoration: const InputDecoration(
-                      labelText: "Nivel riesgo",
-                      border: OutlineInputBorder(),
+                    decoration: _inputDecoration(
+                      label: "Nivel riesgo",
+                      icon: Icons.health_and_safety_outlined,
                     ),
                     items: riskLevels.map((e) {
                       return DropdownMenuItem(
@@ -820,9 +876,9 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   DropdownButtonFormField<TechnicalLocation>(
                     value: selectedTechnicalLocation,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: "Ubicación técnica",
-                      border: OutlineInputBorder(),
+                    decoration: _inputDecoration(
+                      label: "Ubicación técnica",
+                      icon: Icons.location_on_outlined,
                     ),
                     items: technicalLocations.map((location) {
                       final text =
@@ -869,9 +925,9 @@ class _ReportFormPageState extends State<ReportFormPage> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: TextField(
                         controller: controllers[f.campoPersonalizadoId],
-                        decoration: InputDecoration(
-                          labelText: f.descripcion,
-                          border: const OutlineInputBorder(),
+                        decoration: _inputDecoration(
+                          label: f.descripcion,
+                          icon: Icons.edit_note,
                         ),
                       ),
                     );
@@ -879,97 +935,141 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
                   const SizedBox(height: 20),
 
-                  Row(
-                    children: [
-                      const Text(
-                        "Evidencia fotográfica",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: AppTheme.dorado.withOpacity(0.30),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: widget.report.requiereEvidencia
-                              ? Colors.red.withOpacity(0.12)
-                              : Colors.green.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.dorado.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
-                        child: Text(
-                          widget.report.requiereEvidencia
-                              ? "Obligatoria"
-                              : "Opcional",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: widget.report.requiereEvidencia
-                                ? Colors.red
-                                : Colors.green,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      ...evidencias.map((file) {
-                        return Stack(
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.file(
-                                file,
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: AppTheme.dorado.withOpacity(0.14),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.photo_camera_outlined,
+                                color: AppTheme.dorado,
                               ),
                             ),
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    evidencias.remove(file);
-                                  });
-                                },
-                                child: const CircleAvatar(
-                                  radius: 12,
-                                  backgroundColor: Colors.red,
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 14,
-                                    color: Colors.white,
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                "Evidencia fotográfica",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: AppTheme.marBaltico,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: widget.report.requiereEvidencia
+                                    ? Colors.red.withOpacity(0.12)
+                                    : Colors.green.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                widget.report.requiereEvidencia ? "Obligatoria" : "Opcional",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: widget.report.requiereEvidencia
+                                      ? Colors.red
+                                      : Colors.green,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            ...evidencias.map((file) {
+                              return Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.file(
+                                      file,
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          evidencias.remove(file);
+                                        });
+                                      },
+                                      child: const CircleAvatar(
+                                        radius: 12,
+                                        backgroundColor: Colors.red,
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              );
+                            }),
+
+                            if (evidencias.length < 5)
+                              GestureDetector(
+                                onTap: takePhoto,
+                                child: Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.dorado.withOpacity(0.08),
+                                    border: Border.all(
+                                      color: AppTheme.dorado.withOpacity(0.45),
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: AppTheme.dorado,
+                                    size: 30,
                                   ),
                                 ),
                               ),
-                            )
                           ],
-                        );
-                      }),
-
-                      if (evidencias.length < 5)
-                        GestureDetector(
-                          onTap: takePhoto,
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.camera_alt),
-                          ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 30),
@@ -977,7 +1077,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   FutureBuilder<bool>(
                     future: NetworkInfo().hasInternet(),
                     builder: (context, snapshot) {
-
                       final hasInternet = snapshot.data ?? false;
 
                       return SizedBox(
@@ -987,9 +1086,17 @@ class _ReportFormPageState extends State<ReportFormPage> {
                           onPressed: saving ? null : handleSubmit,
                           icon: Icon(hasInternet ? Icons.send : Icons.save),
                           label: Text(
-                            hasInternet
-                                ? "Guardar reporte"
-                                : "Guardar borrador",
+                            hasInternet ? "Guardar reporte" : "Guardar borrador",
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.dorado,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey.shade300,
+                            disabledForegroundColor: Colors.grey.shade600,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       );
@@ -1163,18 +1270,107 @@ class _ReportFormPageState extends State<ReportFormPage> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Enviar reporte"),
-          content: const Text(
-            "Se enviará el reporte inmediatamente. ¿Deseas continuar?",
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
           ),
+          titlePadding: EdgeInsets.zero,
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+
+          title: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: AppTheme.azulOscuro,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+              ),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.send_outlined,
+                  color: Colors.white,
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "Enviar reporte",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          content: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppTheme.dorado.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.cloud_upload_outlined,
+                  color: AppTheme.dorado,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Se enviará el reporte inmediatamente.",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppTheme.marBaltico,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "¿Deseas continuar?",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancelar"),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(
+                  color: AppTheme.textColor,
+                ),
+              ),
             ),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text("Enviar"),
+              icon: const Icon(Icons.send),
+              label: const Text("Enviar"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
           ],
         ),
@@ -1183,7 +1379,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
       if (confirmed == true) {
         await saveOrSend(send: true);
       }
-
     } else {
       await saveOrSend(send: false);
     }

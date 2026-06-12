@@ -515,7 +515,7 @@ class _HomePageState extends State<HomePage> {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.logout),
-                  color: AppTheme.marBaltico,
+                  color: Colors.white,
                   onPressed: () async {
                     await _logout(context);
                   },
@@ -528,9 +528,15 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   children: [
                     Card(
-                      elevation: 6,
+                      elevation: 2,
+                      color: Colors.white,
+                      shadowColor: AppTheme.dorado.withOpacity(0.18),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(
+                          color: AppTheme.dorado.withOpacity(0.35),
+                          width: 1,
+                        ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(20),
@@ -540,9 +546,14 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             Row(
                               children: [
-                                const CircleAvatar(
+                                CircleAvatar(
                                   radius: 30,
-                                  child: Icon(Icons.person, size: 30),
+                                  backgroundColor: AppTheme.dorado.withOpacity(0.15),
+                                  child: const Icon(
+                                    Icons.person,
+                                    size: 30,
+                                    color: AppTheme.dorado,
+                                  ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
@@ -554,13 +565,14 @@ class _HomePageState extends State<HomePage> {
                                         style: const TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
+                                          color: AppTheme.marBaltico,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         user.correo,
                                         style: const TextStyle(
-                                          color: Colors.grey,
+                                          color: AppTheme.textColor,
                                         ),
                                       ),
                                     ],
@@ -570,7 +582,9 @@ class _HomePageState extends State<HomePage> {
                             ),
 
                             const SizedBox(height: 20),
-                            const Divider(),
+                            Divider(
+                              color: AppTheme.dorado.withOpacity(0.25),
+                            ),
                             const SizedBox(height: 10),
 
                             _infoRow(
@@ -600,13 +614,18 @@ class _HomePageState extends State<HomePage> {
                             ),
 
                             const SizedBox(height: 16),
-                            const Divider(),
+                            Divider(
+                              color: AppTheme.dorado.withOpacity(0.25),
+                            ),
                             const SizedBox(height: 10),
 
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.sync),
+                                const Icon(
+                                  Icons.sync,
+                                  color: AppTheme.dorado,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
@@ -616,13 +635,14 @@ class _HomePageState extends State<HomePage> {
                                         "Última sincronización",
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
+                                          color: AppTheme.marBaltico,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         lastSync,
                                         style: const TextStyle(
-                                          color: Colors.grey,
+                                          color: AppTheme.textColor,
                                         ),
                                       ),
                                     ],
@@ -638,9 +658,15 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 20),
 
                     Card(
-                      elevation: 4,
+                      elevation: 2,
+                      color: Colors.white,
+                      shadowColor: AppTheme.dorado.withOpacity(0.18),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(
+                          color: AppTheme.dorado.withOpacity(0.35),
+                          width: 1,
+                        ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
@@ -649,13 +675,17 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             const Row(
                               children: [
-                                Icon(Icons.assignment_outlined),
+                                Icon(
+                                  Icons.assignment_outlined,
+                                  color: AppTheme.dorado,
+                                ),
                                 SizedBox(width: 8),
                                 Text(
                                   "Mis reportes",
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
+                                    color: AppTheme.marBaltico,
                                   ),
                                 ),
                               ],
@@ -667,7 +697,7 @@ class _HomePageState extends State<HomePage> {
                               "${draftReports.length} pendiente(s) por enviar",
                               style: const TextStyle(
                                 fontSize: 15,
-                                color: Colors.grey,
+                                color: AppTheme.textColor,
                               ),
                             ),
 
@@ -680,6 +710,16 @@ class _HomePageState extends State<HomePage> {
                                 icon: const Icon(Icons.send),
                                 label: Text(
                                   "${draftReports.length} pendiente(s) por enviar",
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.dorado,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: Colors.grey.shade300,
+                                  disabledForegroundColor: Colors.grey.shade600,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                             ),
@@ -731,38 +771,108 @@ class _HomePageState extends State<HomePage> {
                             showDialog(
                               context: context,
                               builder: (_) => AlertDialog(
-                                title: const Text("Sincronizar datos"),
-                                content: RichText(
-                                  text: const TextSpan(
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 16,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                titlePadding: EdgeInsets.zero,
+                                contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                                actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+
+                                title: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: const BoxDecoration(
+                                    color: AppTheme.azulOscuro,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(18),
+                                      topRight: Radius.circular(18),
                                     ),
+                                  ),
+                                  child: const Row(
                                     children: [
-                                      TextSpan(
-                                        text:
-                                        "¿Deseas sincronizar la información ahora?\n\n",
+                                      Icon(
+                                        Icons.sync,
+                                        color: Colors.white,
                                       ),
-                                      TextSpan(
-                                        text: "Se requiere conexión a internet.",
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                      SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          "Sincronizar datos",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
+
+                                content: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 42,
+                                      height: 42,
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.dorado.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.wifi,
+                                        color: AppTheme.dorado,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    const Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "¿Deseas sincronizar la información ahora?",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: AppTheme.marBaltico,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            "Se requiere conexión a internet.",
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: AppTheme.textColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(context),
-                                    child: const Text("Cancelar"),
+                                    child: const Text(
+                                      "Cancelar",
+                                      style: TextStyle(
+                                        color: AppTheme.textColor,
+                                      ),
+                                    ),
                                   ),
                                   ElevatedButton(
                                     onPressed: () {
                                       Navigator.pop(context);
                                       startSync();
                                     },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.dorado,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
                                     child: const Text("Aceptar"),
                                   ),
                                 ],
@@ -888,12 +998,19 @@ Widget _infoRow({
   return Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon),
+      Icon(
+        icon,
+        color: AppTheme.dorado,
+        size: 22,
+      ),
       const SizedBox(width: 10),
       Expanded(
         child: Text(
           text,
-          style: const TextStyle(fontSize: 16),
+          style: const TextStyle(
+            fontSize: 16,
+            color: AppTheme.marBaltico,
+          ),
         ),
       ),
     ],
@@ -908,30 +1025,48 @@ Widget _menuItem({
 }) {
   return InkWell(
     onTap: onTap,
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(18),
     child: Card(
-      elevation: 4,
+      elevation: 2,
+      color: Colors.white,
+      shadowColor: AppTheme.dorado.withOpacity(0.18),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: AppTheme.dorado.withOpacity(0.30),
+          width: 1,
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 42,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: AppTheme.dorado.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                icon,
+                size: 30,
+                color: AppTheme.dorado,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: AppTheme.marBaltico,
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );

@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/app_theme.dart';
 import '../../../external_register/presentation/pages/external_register_page.dart';
 import 'login_page.dart';
 
 class UserTypePage extends StatelessWidget {
   const UserTypePage({super.key});
 
+  static const Color accentColor = Color(0xFF5F5DFD);
+  static const Color softBackground = Color(0xFFF6F7FB);
+
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final goldColor = AppTheme.dorado;
+    final blueColor = AppTheme.azul;
+    final blueColor2 = AppTheme.azulOscuro;
     final textColor = Theme.of(context).colorScheme.onSurface;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: softBackground,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -20,127 +26,184 @@ class UserTypePage extends StatelessWidget {
             final height = constraints.maxHeight;
 
             final isSmallHeight = height < 700;
-            final isPhone = width < 600;
+            final isTablet = width > 600;
 
-            final containerWidth = width > 500 ? 400.0 : width * 0.9;
+            final containerWidth = isTablet ? 460.0 : width * 0.90;
 
             final logoHeight = isSmallHeight
-                ? 140.0
-                : isPhone
-                ? 200.0
-                : 220.0;
+                ? 110.0
+                : isTablet
+                ? 180.0
+                : 150.0;
 
-            final titleSize = isSmallHeight ? 24.0 : 30.0;
-            final subtitleSize = isSmallHeight ? 16.0 : 20.0;
-
-            final topSpacing = isSmallHeight ? 10.0 : 20.0;
-            final middleSpacing = isSmallHeight ? 18.0 : 30.0;
-            final cardSpacing = isSmallHeight ? 12.0 : 18.0;
-
-            return SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: height,
+            return Stack(
+              children: [
+                Positioned(
+                  top: -90,
+                  right: -70,
+                  child: _DecorativeCircle(
+                    size: 190,
+                    color: blueColor.withOpacity(0.10),
+                  ),
                 ),
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isSmallHeight ? 12 : 24,
+
+                Positioned(
+                  top: 105,
+                  left: -55,
+                  child: _DecorativeCircle(
+                    size: 120,
+                    color: goldColor.withOpacity(0.10),
+                  ),
+                ),
+
+                Positioned(
+                  bottom: -80,
+                  right: -55,
+                  child: _DecorativeCircle(
+                    size: 150,
+                    color: accentColor.withOpacity(0.08),
+                  ),
+                ),
+
+                SingleChildScrollView(
+                  keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: height,
                     ),
-                    child: Container(
-                      width: containerWidth,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Image.asset(
-                            "assets/images/Original.png",
-                            height: logoHeight,
-                            fit: BoxFit.contain,
-                          ),
-
-                          SizedBox(height: topSpacing),
-
-                          Text(
-                            "Bienvenido",
-                            style: TextStyle(
-                              fontSize: titleSize,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          Text(
-                            "Selecciona tu tipo de acceso",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: subtitleSize,
-                            ),
-                          ),
-
-                          SizedBox(height: middleSpacing),
-
-                          _AccessTypeButton(
-                            icon: Icons.badge_outlined,
-                            title: "Empleado interno",
-                            subtitle: "Ingresa con tu número de empleado",
-                            primaryColor: primaryColor,
-                            isCompact: isSmallHeight,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginPage(),
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: isSmallHeight ? 14 : 26,
+                        ),
+                        child: SizedBox(
+                          width: containerWidth,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 12,
                                 ),
-                              );
-                            },
-                          ),
 
-                          SizedBox(height: cardSpacing),
-
-                          _AccessTypeButton(
-                            icon: Icons.person_outline,
-                            title: "Usuario externo",
-                            subtitle: "Solicita acceso como personal externo",
-                            primaryColor: primaryColor,
-                            isCompact: isSmallHeight,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ExternalRegisterPage(),
+                                child: Image.asset(
+                                  "assets/images/Original.png",
+                                  height: logoHeight,
+                                  fit: BoxFit.contain,
                                 ),
-                              );
-                            },
-                          ),
+                              ),
 
-                          SizedBox(height: cardSpacing),
+                              SizedBox(height: isSmallHeight ? 16 : 22),
 
-                          _AccessTypeButton(
-                            icon: Icons.login_outlined,
-                            title: "Ya tengo cuenta",
-                            subtitle: "Inicia sesión con tu usuario registrado",
-                            primaryColor: primaryColor,
-                            isCompact: isSmallHeight,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginPage(),
+                              Text(
+                                "Bienvenido",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: isSmallHeight ? 25 : 30,
+                                  fontWeight: FontWeight.bold,
+                                  color: blueColor2,
                                 ),
-                              );
-                            },
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              Text(
+                                "Accede a tu cuenta o selecciona el tipo de registro que necesitas.",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.60),
+                                  fontSize: 15,
+                                  height: 1.35,
+                                ),
+                              ),
+
+                              SizedBox(height: isSmallHeight ? 22 : 30),
+
+                              _SectionHeader(
+                                title: "Acceso",
+                                subtitle:
+                                "Si ya tienes una cuenta registrada, inicia sesión.",
+                                color: blueColor,
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              _OptionCard(
+                                icon: Icons.login_outlined,
+                                title: "Ya soy usuario",
+                                subtitle:
+                                "Inicia sesión con tu cuenta registrada.",
+                                iconColor: goldColor,
+                                borderColor: goldColor,
+                                backgroundColor: Colors.white,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              SizedBox(height: isSmallHeight ? 20 : 26),
+
+                              _SectionHeader(
+                                title: "Nuevo registro",
+                                subtitle:
+                                "Elige el tipo de usuario para iniciar tu solicitud.",
+                                color: blueColor,
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              _OptionCard(
+                                icon: Icons.badge_outlined,
+                                title: "Empleado interno",
+                                subtitle: "Regístrate usando tu número de empleado.",
+                                iconColor: goldColor,
+                                borderColor: goldColor.withOpacity(0.28),
+                                backgroundColor: Colors.white,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              _OptionCard(
+                                icon: Icons.person_outline,
+                                title: "Usuario externo",
+                                subtitle: "Solicita acceso como personal externo.",
+                                iconColor: goldColor,
+                                borderColor: goldColor.withOpacity(0.28),
+                                backgroundColor: Colors.white,
+                                onTap: () {//
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ExternalRegisterPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              const SizedBox(height: 18),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             );
           },
         ),
@@ -149,67 +212,153 @@ class UserTypePage extends StatelessWidget {
   }
 }
 
-class _AccessTypeButton extends StatelessWidget {
+class _DecorativeCircle extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _DecorativeCircle({
+    required this.size,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Color color;
+
+  const _SectionHeader({
+    required this.title,
+    required this.subtitle,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 5,
+          height: 38,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 2),
+
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: textColor.withOpacity(0.55),
+                  fontSize: 13,
+                  height: 1.25,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OptionCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final Color primaryColor;
-  final bool isCompact;
+  final Color iconColor;
+  final Color borderColor;
+  final Color backgroundColor;
   final VoidCallback onTap;
 
-  const _AccessTypeButton({
+  const _OptionCard({
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.primaryColor,
-    required this.isCompact,
+    required this.iconColor,
+    required this.borderColor,
+    required this.backgroundColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final iconBoxSize = isCompact ? 46.0 : 54.0;
-    final iconSize = isCompact ? 28.0 : 32.0;
-    final titleSize = isCompact ? 16.0 : 18.0;
-    final subtitleSize = isCompact ? 13.0 : 15.0;
-    final verticalPadding = isCompact ? 14.0 : 20.0;
+    final textColor = Theme.of(context).colorScheme.onSurface;
 
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: verticalPadding,
-          ),
+          padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: backgroundColor,
             border: Border.all(
-              color: primaryColor,
-              width: 1.6,
+              color: borderColor,
+              width: 1.2,
             ),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0C274B).withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 7),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Container(
-                width: iconBoxSize,
-                height: iconBoxSize,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  color: iconColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   icon,
-                  size: iconSize,
-                  color: primaryColor,
+                  color: iconColor,
+                  size: 27,
                 ),
               ),
-              const SizedBox(width: 16),
+
+              const SizedBox(width: 14),
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,29 +368,42 @@ class _AccessTypeButton extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: titleSize,
+                        color: textColor,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
+
                     const SizedBox(height: 4),
+
                     Text(
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: subtitleSize,
-                        color: Colors.grey,
+                        color: textColor.withOpacity(0.55),
+                        fontSize: 13,
+                        height: 1.25,
                       ),
                     ),
                   ],
                 ),
               ),
+
               const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 20,
-                color: primaryColor,
+
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  color: iconColor,
+                  size: 16,
+                ),
               ),
             ],
           ),
@@ -250,4 +412,3 @@ class _AccessTypeButton extends StatelessWidget {
     );
   }
 }
-

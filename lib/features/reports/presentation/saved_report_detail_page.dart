@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
+import '../../../../core/app_theme.dart';
 import '../data/datasources/local_reports_local_datasource.dart';
 import '../domain/entities/local_report.dart';
 import '../domain/entities/report_type.dart';
@@ -84,16 +84,107 @@ class _SavedReportDetailPageState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Eliminar"),
-        content: const Text("¿Eliminar este borrador?"),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        titlePadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AppTheme.azulOscuro,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.delete_outline,
+                color: Colors.white,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Eliminar reporte",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.warning_amber_outlined,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "¿Eliminar este borrador?",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.marBaltico,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "Esta acción no se puede deshacer.",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(
+                color: AppTheme.textColor,
+              ),
+            ),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Eliminar"),
+            icon: const Icon(Icons.delete_outline),
+            label: const Text("Eliminar"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
         ],
       ),
@@ -115,31 +206,52 @@ class _SavedReportDetailPageState
 
   Widget card(String title, Widget child, {IconData? icon}) {
     return Card(
+      color: Colors.white,
+      elevation: 2,
+      shadowColor: AppTheme.dorado.withOpacity(0.18),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: AppTheme.dorado.withOpacity(0.30),
+          width: 1,
+        ),
       ),
-      elevation: 3,
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 18),
-                  const SizedBox(width: 8),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppTheme.dorado.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: AppTheme.dorado,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
                 ],
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppTheme.marBaltico,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             child,
           ],
         ),
@@ -157,9 +269,11 @@ class _SavedReportDetailPageState
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade300),
+          color: AppTheme.dorado.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.dorado.withOpacity(0.22),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +282,7 @@ class _SavedReportDetailPageState
               label,
               style: const TextStyle(
                 fontSize: 12,
-                color: Colors.grey,
+                color: AppTheme.textColor,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -178,6 +292,7 @@ class _SavedReportDetailPageState
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
+                color: AppTheme.marBaltico,
               ),
             ),
           ],
@@ -198,20 +313,28 @@ class _SavedReportDetailPageState
               ),
             );
           },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.file(
-              file,
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppTheme.dorado.withOpacity(0.35),
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                file,
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ),
         if (isDraft)
           Positioned(
-            top: 0,
-            right: 0,
+            top: 4,
+            right: 4,
             child: GestureDetector(
               onTap: () {
                 setState(() {
@@ -221,8 +344,11 @@ class _SavedReportDetailPageState
               child: const CircleAvatar(
                 radius: 12,
                 backgroundColor: Colors.red,
-                child: Icon(Icons.close,
-                    size: 14, color: Colors.white),
+                child: Icon(
+                  Icons.close,
+                  size: 14,
+                  color: Colors.white,
+                ),
               ),
             ),
           )
@@ -281,17 +407,17 @@ class _SavedReportDetailPageState
                       margin: const EdgeInsets.only(top: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppTheme.dorado.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.orange.withOpacity(0.3),
+                          color: AppTheme.dorado.withOpacity(0.35),
                         ),
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.confirmation_number,
-                            color: Colors.orange,
+                            color: AppTheme.dorado,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -299,7 +425,7 @@ class _SavedReportDetailPageState
                               "ID del reporte: ${r.resultadoReporteId}",
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.orange,
+                                color: AppTheme.dorado,
                               ),
                             ),
                           ),
@@ -359,10 +485,17 @@ class _SavedReportDetailPageState
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppTheme.dorado.withOpacity(0.08),
+                        border: Border.all(
+                          color: AppTheme.dorado.withOpacity(0.45),
+                        ),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.camera_alt),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: AppTheme.dorado,
+                        size: 30,
+                      ),
                     ),
                   ),
               ],
@@ -371,21 +504,37 @@ class _SavedReportDetailPageState
           ),
 
           const SizedBox(height: 20),
-
           /// BOTONES
           if (isDraft)
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     onPressed: deleteReport,
-                    icon: const Icon(Icons.delete),
+                    icon: const Icon(Icons.delete_outline),
                     label: const Text("Eliminar"),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.dorado,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     onPressed: () async {
                       await Navigator.push(
                         context,
@@ -403,7 +552,7 @@ class _SavedReportDetailPageState
 
                       Navigator.pop(context);
                     },
-                    icon: const Icon(Icons.edit),
+                    icon: const Icon(Icons.edit_outlined),
                     label: const Text("Editar"),
                   ),
                 ),
@@ -439,7 +588,9 @@ class FullImagePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: const Text("Evidencia"),
+      ),
       backgroundColor: Colors.black,
       body: Center(
         child: InteractiveViewer(
@@ -448,5 +599,4 @@ class FullImagePage extends StatelessWidget {
       ),
     );
   }
-
 }

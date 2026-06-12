@@ -1,92 +1,93 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../../../core/network/token_service.dart';
-import '../../../login/presentation/pages/login_page.dart';
-import '../../data/datasources/external_register_remote_datasource.dart';
-import '../../../../core/app_theme.dart';
-class ExternalRegisterPage extends StatefulWidget {
-  const ExternalRegisterPage({super.key});
+import '../../../core/app_theme.dart';
+import '../../login/domain/entities/internal_employee_data.dart';
+import '../../external_register/data/datasources/external_register_remote_datasource.dart';
+import '../../../core/network/token_service.dart';
+import '../../login/presentation/pages/login_page.dart';
+
+class InternalRegisterFormPage extends StatefulWidget {
+  final InternalEmployeeData empleado;
+
+  const InternalRegisterFormPage({
+    super.key,
+    required this.empleado,
+  });
 
   @override
-  State<ExternalRegisterPage> createState() => _ExternalRegisterPageState();
+  State<InternalRegisterFormPage> createState() =>
+      _InternalRegisterFormPageState();
 }
 
-class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController lastNamePController = TextEditingController();
-  final TextEditingController lastNameMController = TextEditingController();
-  final TextEditingController departmentController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
+class _InternalRegisterFormPageState extends State<InternalRegisterFormPage> {
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-  TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
 
-  late ExternalRegisterRemoteDatasource externalRegisterRemoteDatasource;
-
-  bool loadingRegister = false;
+  late ExternalRegisterRemoteDatasource remoteDatasource;
 
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
 
   bool loadingInitialData = true;
   bool errorInitialData = false;
-  bool loadingDepartments = false;
-  bool loadingTechnicalLocations = false;
+  bool loadingRegister = false;
 
-  List<BusinessUnit> businessUnits = [];
-  List<TechnicalLocation> technicalLocations = [];
-  List<Department> departments = [];
+  List<InternalTechnicalLocation> technicalLocations = [];
+  List<InternalDepartment> departments = [];
 
-  Department? selectedDepartment;
-  BusinessUnit? selectedBusinessUnit;
-  TechnicalLocation? selectedTechnicalLocation;
+  InternalTechnicalLocation? selectedTechnicalLocation;
+  InternalDepartment? selectedDepartment;
 
   @override
   void initState() {
     super.initState();
 
-    externalRegisterRemoteDatasource = ExternalRegisterRemoteDatasource(TokenService());
+    remoteDatasource = ExternalRegisterRemoteDatasource(TokenService());
+    emailController.text = widget.empleado.correoLimpio;
 
     loadInitialData();
-
-    nameController.addListener(generateUsername);
-    lastNamePController.addListener(generateUsername);
-    lastNameMController.addListener(generateUsername);
   }
 
   Future<void> loadInitialData() async {
     setState(() {
       loadingInitialData = true;
       errorInitialData = false;
-      selectedBusinessUnit = null;
-      selectedTechnicalLocation = null;
       technicalLocations = [];
-      businessUnits = [];
+      departments = [];
+      selectedTechnicalLocation = null;
+      selectedDepartment = null;
     });
 
     try {
-      final token = await TokenService().getToken();
+      final technicalLocationResult =
+      await remoteDatasource.getTechnicalLocations(
+        unidadNegocioId: widget.empleado.unidadNegocioId,
+      );
 
-      if (token == null || token.isEmpty) {
-        throw Exception("No se pudo obtener token");
-      }
-
-      final result = await externalRegisterRemoteDatasource.getBusinessUnits();
+      final departmentResult = await remoteDatasource.getDepartments();
 
       if (!mounted) return;
 
       setState(() {
-        businessUnits = result
-            .map((item) => BusinessUnit.fromJson(item))
-            .where((item) => item.unidadNegocioId != 0 && item.nombre.trim().isNotEmpty)
+        technicalLocations = technicalLocationResult
+            .map((item) => InternalTechnicalLocation.fromJson(item))
+            .where((item) =>
+        item.ubicacionTecnicaId != 0 &&
+            item.descripcion.trim().isNotEmpty)
+            .toList();
+
+        departments = departmentResult
+            .map((item) => InternalDepartment.fromJson(item))
+            .where((item) =>
+        item.departamentoId != 0 &&
+            item.descripcion.trim().isNotEmpty)
             .toList();
 
         loadingInitialData = false;
         errorInitialData = false;
       });
     } catch (e) {
-      print("ERROR LOAD INITIAL EXTERNAL REGISTER DATA: $e");
+      print("ERROR LOAD INTERNAL REGISTER DATA: $e");
 
       if (!mounted) return;
 
@@ -97,122 +98,23 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
     }
   }
 
-  Future<void> loadTechnicalLocationsByBusinessUnit(int unidadNegocioId,) async {
-    setState(() {
-      loadingTechnicalLocations = true;
-      selectedTechnicalLocation = null;
-      technicalLocations = [];
-    });
-
-    try {
-      final result =
-      await externalRegisterRemoteDatasource.getTechnicalLocations(
-        unidadNegocioId: unidadNegocioId,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        technicalLocations = result
-            .map((item) => TechnicalLocation.fromJson(item))
-            .where((item) => item.ubicacionTecnicaId != 0)
-            .toList();
-
-        loadingTechnicalLocations = false;
-      });
-    } catch (e) {
-      print("ERROR LOAD EXTERNAL TECHNICAL LOCATIONS: $e");
-
-      if (!mounted) return;
-
-      setState(() {
-        loadingTechnicalLocations = false;
-      });
-
-      showMsg("No se pudieron cargar las ubicaciones técnicas");
-    }
-  }
-
-  Future<void> loadDepartments() async {
-    setState(() {
-      loadingDepartments = true;
-      selectedDepartment = null;
-      departments = [];
-    });
-
-    try {
-      final result = await externalRegisterRemoteDatasource.getDepartments();
-
-      if (!mounted) return;
-
-      setState(() {
-        departments = result
-            .map((item) => Department.fromJson(item))
-            .where((item) =>
-        item.departamentoId != 0 && item.descripcion.trim().isNotEmpty)
-            .toList();
-
-        loadingDepartments = false;
-      });
-    } catch (e) {
-      print("ERROR LOAD EXTERNAL DEPARTMENTS: $e");
-
-      if (!mounted) return;
-
-      setState(() {
-        loadingDepartments = false;
-      });
-
-      showMsg("No se pudieron cargar los departamentos");
-    }
-  }
-
-  Future<void> registerExternalUser() async {
-    final nombreUsuario = usernameController.text.trim();
-    final nombres = nameController.text.trim();
-    final apellidoPaterno = lastNamePController.text.trim();
-    final apellidoMaterno = lastNameMController.text.trim();
+  Future<void> continueRegister() async {
     final correo = emailController.text.trim();
-    final contrasenia = passwordController.text.trim();
-    final confirmarContrasenia = confirmPasswordController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
 
-    if (nombreUsuario.isEmpty) {
-      showMsg("El nombre de usuario es obligatorio");
-      return;
-    }
-
-    if (nombres.isEmpty) {
-      showMsg("Ingresa el nombre");
-      return;
-    }
-
-    if (apellidoPaterno.isEmpty) {
-      showMsg("Ingresa el apellido paterno");
-      return;
-    }
-
-    if (apellidoMaterno.isEmpty) {
-      showMsg("Ingresa el apellido materno");
-      return;
-    }
-
-    if (contrasenia.isEmpty) {
+    if (password.isEmpty) {
       showMsg("Ingresa la contraseña");
       return;
     }
 
-    if (confirmarContrasenia.isEmpty) {
+    if (confirmPassword.isEmpty) {
       showMsg("Confirma la contraseña");
       return;
     }
 
-    if (contrasenia != confirmarContrasenia) {
+    if (password != confirmPassword) {
       showMsg("Las contraseñas no coinciden");
-      return;
-    }
-
-    if (selectedBusinessUnit == null) {
-      showMsg("Selecciona una unidad de negocio");
       return;
     }
 
@@ -226,21 +128,17 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
       return;
     }
 
+    final numeroEmpleado = "000${widget.empleado.numeroEmpleado.trim()}";
+
     setState(() {
       loadingRegister = true;
     });
 
     try {
-      final response =
-      await externalRegisterRemoteDatasource.registerExternalUser(
-        nombreUsuario: nombreUsuario,
-        nombres: nombres,
-        apellidoPaterno: apellidoPaterno,
-        apellidoMaterno: apellidoMaterno,
+      final response = await remoteDatasource.registerInternalUser(
+        numeroEmpleado: numeroEmpleado,
         correo: correo,
-        contrasenia: contrasenia,
-        confirmarContrasenia: confirmarContrasenia,
-        unidadNegocioId: selectedBusinessUnit!.unidadNegocioId,
+        contrasenia: password,
         departamentoId: selectedDepartment!.departamentoId,
         ubicacionTecnicaId: selectedTechnicalLocation!.ubicacionTecnicaId,
       );
@@ -253,13 +151,13 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
 
       final success = response["success"] == true;
       final message = response["message"]?.toString() ??
-          "Tu solicitud de registro externo fue enviada correctamente.";
+          "Tu registro fue completado correctamente.";
 
       if (!success) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text("No se pudo registrar"),
+            title: const Text("No se pudo completar el registro"),
             content: Text(message),
             actions: [
               TextButton(
@@ -276,7 +174,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
         context: context,
         barrierDismissible: false,
         builder: (_) => AlertDialog(
-          title: const Text("Registro enviado"),
+          title: const Text("Registro completado"),
           content: Text(message),
           actions: [
             TextButton(
@@ -297,7 +195,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
         ),
       );
     } catch (e) {
-      print("ERROR REGISTER EXTERNAL USER: $e");
+      print("ERROR INTERNAL REGISTER: $e");
 
       if (!mounted) return;
 
@@ -328,62 +226,14 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
       SnackBar(content: Text(msg)),
     );
   }
-  void generateUsername() {
-    final fullName = nameController.text.trim();
-    final lastNameP = lastNamePController.text.trim();
-    final lastNameM = lastNameMController.text.trim();
 
-    if (fullName.isEmpty) {
-      usernameController.text = "";
-      return;
-    }
-
-    final nameParts = fullName
-        .split(RegExp(r'\s+'))
-        .where((part) => part.trim().isNotEmpty)
-        .toList();
-
-    if (nameParts.isEmpty) {
-      usernameController.text = "";
-      return;
-    }
-
-    final firstName = _capitalizeFirstLetter(nameParts.first);
-
-    final otherNameInitials = nameParts
-        .skip(1)
-        .map((part) => part[0].toUpperCase())
-        .join();
-
-    final lastNamePInitial =
-    lastNameP.isNotEmpty ? lastNameP[0].toUpperCase() : "";
-
-    final lastNameMInitial =
-    lastNameM.isNotEmpty ? lastNameM[0].toUpperCase() : "";
-
-    final generatedUsername =
-        "$firstName$otherNameInitials$lastNamePInitial$lastNameMInitial";
-
-    if (usernameController.text != generatedUsername) {
-      usernameController.text = generatedUsername;
-    }
-  }
-
-  String _capitalizeFirstLetter(String value) {
-    if (value.isEmpty) return "";
-
-    final lowerValue = value.toLowerCase();
-
-    return lowerValue[0].toUpperCase() + lowerValue.substring(1);
-  }
-
-  Widget _buildInitialLoadingView() {
+  Widget _buildLoadingView() {
     final goldColor = AppTheme.dorado;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       appBar: AppBar(
-        title: const Text("Registro externo"),
+        title: const Text("Registro interno"),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -411,11 +261,11 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    "Preparando registro externo...",
+                    "Preparando registro interno...",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 16,
                       color: Colors.grey,
+                      fontSize: 16,
                     ),
                   ),
                 ],
@@ -427,14 +277,14 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
     );
   }
 
-  Widget _buildInitialErrorView() {
+  Widget _buildErrorView() {
     final blueColor = AppTheme.azul;
     final goldColor = AppTheme.dorado;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       appBar: AppBar(
-        title: const Text("Registro externo"),
+        title: const Text("Registro interno"),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -478,7 +328,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    "No fue posible obtener el token o cargar las unidades de negocio. Verifica tu conexión e intenta nuevamente.",
+                    "No fue posible cargar las ubicaciones técnicas o departamentos. Verifica tu conexión e intenta nuevamente.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.grey,
@@ -528,38 +378,19 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
     );
   }
 
-  @override
-  void dispose() {
-    nameController.removeListener(generateUsername);
-    lastNamePController.removeListener(generateUsername);
-    lastNameMController.removeListener(generateUsername);
-
-    usernameController.dispose();
-    nameController.dispose();
-    lastNamePController.dispose();
-    lastNameMController.dispose();
-    departmentController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    super.dispose();
-  }
   InputDecoration _dropdownDecoration({
-    required BuildContext context,
     required String label,
     required IconData icon,
     required Color goldColor,
-    String? helperText,
   }) {
     return InputDecoration(
       labelText: label,
-      helperText: helperText,
       prefixIcon: Icon(
         icon,
         color: goldColor,
       ),
       filled: true,
-      fillColor: const Color(0xFFF9FAFC),//
+      fillColor: const Color(0xFFF9FAFC),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(
@@ -583,24 +414,31 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
   }
 
   @override
+  void dispose() {
+    passwordController.dispose();
+    emailController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final blueColor = AppTheme.azul;
-    final blueColor2 = AppTheme.azulOscuro;
     final goldColor = AppTheme.dorado;
     final textColor = Theme.of(context).colorScheme.onSurface;
 
     if (loadingInitialData) {
-      return _buildInitialLoadingView();
+      return _buildLoadingView();
     }
 
     if (errorInitialData) {
-      return _buildInitialErrorView();
+      return _buildErrorView();
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       appBar: AppBar(
-        title: const Text("Registro externo"),
+        title: const Text("Registro interno"),
         centerTitle: true,
       ),
       body: Stack(
@@ -664,19 +502,19 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                           const SizedBox(height: 16),
 
                           Text(
-                            "Crear cuenta externa",
+                            "Completa tu registro",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: isTablet ? 28 : 24,
                               fontWeight: FontWeight.bold,
-                              color: blueColor2,
+                              color: blueColor,
                             ),
                           ),
 
                           const SizedBox(height: 8),
 
                           Text(
-                            "Completa tus datos para solicitar acceso a la aplicación.",
+                            "Confirma tus datos y completa la información requerida.",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: textColor.withOpacity(0.55),
@@ -687,70 +525,29 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
 
                           const SizedBox(height: 26),
 
-                          _FormSectionCard(
-                            title: "Datos personales",
+                          _EmployeeSummaryCard(
+                            empleado: widget.empleado,
                             blueColor: blueColor,
                             goldColor: goldColor,
-                            children: [
-                              _CustomTextField(
-                                controller: nameController,
-                                label: "Nombre",
-                                icon: Icons.badge_outlined,
-                                inputFormatters: [
-                                  CapitalizeFirstLetterFormatter(),
-                                ],
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              _CustomTextField(
-                                controller: lastNamePController,
-                                label: "Apellido paterno",
-                                icon: Icons.badge_outlined,
-                                inputFormatters: [
-                                  CapitalizeFirstLetterFormatter(),
-                                ],
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              _CustomTextField(
-                                controller: lastNameMController,
-                                label: "Apellido materno",
-                                icon: Icons.badge_outlined,
-                                inputFormatters: [
-                                  CapitalizeFirstLetterFormatter(),
-                                ],
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              _CustomTextField(
-                                controller: usernameController,
-                                label: "Nombre de usuario",
-                                icon: Icons.person_outline,
-                                readOnly: true,
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              _CustomTextField(
-                                controller: emailController,
-                                label: "Correo",
-                                icon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                                helperText: "Opcional. Puedes dejarlo vacío.",
-                              ),
-                            ],
                           ),
 
                           const SizedBox(height: 20),
 
                           _FormSectionCard(
-                            title: "Acceso",
+                            title: "Seguridad",
                             blueColor: blueColor,
                             goldColor: goldColor,
                             children: [
+                              _CustomTextField(
+                                controller: emailController,
+                                label: "Correo",
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                helperText: "Opcional",
+                              ),
+
+                              const SizedBox(height: 16),
+
                               _CustomTextField(
                                 controller: passwordController,
                                 label: "Contraseña",
@@ -803,105 +600,42 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                             blueColor: blueColor,
                             goldColor: goldColor,
                             children: [
-                              DropdownButtonFormField<BusinessUnit>(
-                                value: selectedBusinessUnit,
+                              DropdownButtonFormField<InternalTechnicalLocation>(
+                                value: selectedTechnicalLocation,
                                 isExpanded: true,
                                 decoration: _dropdownDecoration(
-                                  context: context,
-                                  label: "Unidad de negocio",
-                                  icon: Icons.business_outlined,
+                                  label: "Ubicación técnica",
+                                  icon: Icons.location_on_outlined,
                                   goldColor: goldColor,
                                 ),
-                                items: businessUnits.map((unit) {
-                                  return DropdownMenuItem<BusinessUnit>(
-                                    value: unit,
+                                items: technicalLocations.map((location) {
+                                  return DropdownMenuItem<InternalTechnicalLocation>(
+                                    value: location,
                                     child: Text(
-                                      unit.nombre,
+                                      location.descripcionCompleta,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
                                   setState(() {
-                                    selectedBusinessUnit = value;
-                                    selectedTechnicalLocation = null;
-                                    selectedDepartment = null;
-                                    technicalLocations = [];
-                                    departments = [];
-                                  });
-
-                                  if (value != null) {
-                                    loadTechnicalLocationsByBusinessUnit(
-                                      value.unidadNegocioId,
-                                    );
-
-                                    loadDepartments();
-                                  }
-                                },
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              DropdownButtonFormField<TechnicalLocation>(
-                                value: selectedTechnicalLocation,
-                                isExpanded: true,
-                                decoration: _dropdownDecoration(
-                                  context: context,
-                                  label: "Ubicación técnica",
-                                  icon: Icons.location_on_outlined,
-                                  goldColor: selectedBusinessUnit == null
-                                      ? Colors.grey
-                                      : goldColor,
-                                  helperText: selectedBusinessUnit == null
-                                      ? "Primero selecciona una unidad de negocio"
-                                      : null,
-                                ),
-                                items: technicalLocations.map((location) {
-                                  return DropdownMenuItem<TechnicalLocation>(
-                                    value: location,
-                                    child: Text(
-                                      location.denominacion,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: selectedBusinessUnit == null ||
-                                    loadingTechnicalLocations
-                                    ? null
-                                    : (value) {
-                                  setState(() {
                                     selectedTechnicalLocation = value;
                                   });
                                 },
                               ),
 
-                              if (loadingTechnicalLocations)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: LinearProgressIndicator(
-                                    color: goldColor,
-                                    backgroundColor: goldColor.withOpacity(0.12),
-                                  ),
-                                ),
-
                               const SizedBox(height: 16),
 
-                              DropdownButtonFormField<Department>(
+                              DropdownButtonFormField<InternalDepartment>(
                                 value: selectedDepartment,
                                 isExpanded: true,
                                 decoration: _dropdownDecoration(
-                                  context: context,
                                   label: "Departamento",
                                   icon: Icons.apartment_outlined,
-                                  goldColor: selectedBusinessUnit == null
-                                      ? Colors.grey
-                                      : goldColor,
-                                  helperText: selectedBusinessUnit == null
-                                      ? "Primero selecciona una unidad de negocio"
-                                      : null,
+                                  goldColor: goldColor,
                                 ),
                                 items: departments.map((department) {
-                                  return DropdownMenuItem<Department>(
+                                  return DropdownMenuItem<InternalDepartment>(
                                     value: department,
                                     child: Text(
                                       department.descripcion,
@@ -909,24 +643,12 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                                     ),
                                   );
                                 }).toList(),
-                                onChanged: selectedBusinessUnit == null ||
-                                    loadingDepartments
-                                    ? null
-                                    : (value) {
+                                onChanged: (value) {
                                   setState(() {
                                     selectedDepartment = value;
                                   });
                                 },
                               ),
-
-                              if (loadingDepartments)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: LinearProgressIndicator(
-                                    color: goldColor,
-                                    backgroundColor: goldColor.withOpacity(0.12),
-                                  ),
-                                ),
                             ],
                           ),
 
@@ -936,8 +658,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                             width: double.infinity,
                             height: 52,
                             child: ElevatedButton(
-                              onPressed:
-                              loadingRegister ? null : registerExternalUser,
+                              onPressed: loadingRegister ? null : continueRegister,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: goldColor,
                                 foregroundColor: Colors.white,
@@ -956,7 +677,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                                 ),
                               )
                                   : const Text(
-                                "Solicitar acceso",
+                                "Finalizar registro",
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -998,62 +719,55 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
   }
 }
 
-class BusinessUnit {
-  final int unidadNegocioId;
-  final String nombre;
-
-  BusinessUnit({
-    required this.unidadNegocioId,
-    required this.nombre,
-  });
-
-  factory BusinessUnit.fromJson(Map<String, dynamic> json) {
-    return BusinessUnit(
-      unidadNegocioId: json["unidadNegocioId"] ?? json["id"] ?? 0,
-      nombre: json["descripcion"] ??
-          json["nombre"] ??
-          json["nombreUnidadNegocio"] ??
-          json["denominacion"] ??
-          "",
-    );
-  }
-}
-
-class TechnicalLocation {
+class InternalTechnicalLocation {
   final int ubicacionTecnicaId;
   final String claveUbicacionTecnica;
   final String denominacion;
 
-  TechnicalLocation({
+  InternalTechnicalLocation({
     required this.ubicacionTecnicaId,
     required this.claveUbicacionTecnica,
     required this.denominacion,
   });
 
-  factory TechnicalLocation.fromJson(Map<String, dynamic> json) {
-    return TechnicalLocation(
+  String get descripcion {
+    return denominacion.trim();
+  }
+
+  String get descripcionCompleta {
+
+    final nombre = denominacion.trim();
+
+    return "$nombre";
+  }
+
+  factory InternalTechnicalLocation.fromJson(Map<String, dynamic> json) {
+    return InternalTechnicalLocation(
       ubicacionTecnicaId: json["ubicacionTecnicaId"] ?? json["id"] ?? 0,
-      claveUbicacionTecnica: json["claveUbicacionTecnica"] ?? "",
-      denominacion: json["denominacion"] ?? json["nombre"] ?? "",
+      claveUbicacionTecnica: json["claveUbicacionTecnica"]?.toString() ?? "",
+      denominacion: json["denominacion"]?.toString() ??
+          json["descripcion"]?.toString() ??
+          json["nombre"]?.toString() ??
+          "",
     );
   }
 }
 
-class Department {
+class InternalDepartment {
   final int departamentoId;
   final String descripcion;
 
-  Department({
+  InternalDepartment({
     required this.departamentoId,
     required this.descripcion,
   });
 
-  factory Department.fromJson(Map<String, dynamic> json) {
-    return Department(
+  factory InternalDepartment.fromJson(Map<String, dynamic> json) {
+    return InternalDepartment(
       departamentoId: json["departamentoId"] ?? json["id"] ?? 0,
-      descripcion: json["descripcion"] ??
-          json["nombre"] ??
-          json["nombreDepartamento"] ??
+      descripcion: json["descripcion"]?.toString() ??
+          json["nombre"]?.toString() ??
+          json["nombreDepartamento"]?.toString() ??
           "",
     );
   }
@@ -1096,27 +810,205 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+class _EmployeeSummaryCard extends StatelessWidget {
+  final InternalEmployeeData empleado;
+  final Color blueColor;
+  final Color goldColor;
+
+  const _EmployeeSummaryCard({
+    required this.empleado,
+    required this.blueColor,
+    required this.goldColor,
+  });
+
+  String formatEmployeeNumber(String value) {
+    return "000${value.trim()}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final numeroEmpleado = formatEmployeeNumber(
+      empleado.numeroEmpleado,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(
+          color: goldColor.withOpacity(0.22),
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: goldColor.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: goldColor.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.badge_outlined,
+                  color: goldColor,
+                  size: 27,
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      empleado.nombreLimpio,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: blueColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      "Empleado $numeroEmpleado",
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.55),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          Row(
+            children: [
+              Expanded(
+                child: _MiniEmployeeInfo(
+                  label: "Unidad",
+                  value: empleado.unidadNegocioLimpia.isEmpty
+                      ? "Sin unidad"
+                      : empleado.unidadNegocioLimpia,
+                  goldColor: goldColor,
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              Expanded(
+                child: _MiniEmployeeInfo(
+                  label: "Correo",
+                  value: empleado.correoLimpio.isEmpty
+                      ? "Sin correo"
+                      : empleado.correoLimpio,
+                  goldColor: goldColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniEmployeeInfo extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color goldColor;
+
+  const _MiniEmployeeInfo({
+    required this.label,
+    required this.value,
+    required this.goldColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 9,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: goldColor.withOpacity(0.14),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: textColor.withOpacity(0.50),
+              fontSize: 11,
+            ),
+          ),
+
+          const SizedBox(height: 3),
+
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final IconData icon;
-  final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? suffixIcon;
-  final bool readOnly;
+  final TextInputType? keyboardType;
   final String? helperText;
-  final List<TextInputFormatter>? inputFormatters;
 
   const _CustomTextField({
     required this.controller,
     required this.label,
     required this.icon,
-    this.keyboardType,
     this.obscureText = false,
     this.suffixIcon,
-    this.readOnly = false,
+    this.keyboardType,
     this.helperText,
-    this.inputFormatters,
   });
 
   @override
@@ -1125,10 +1017,8 @@ class _CustomTextField extends StatelessWidget {
 
     return TextField(
       controller: controller,
-      keyboardType: keyboardType,
       obscureText: obscureText,
-      readOnly: readOnly,
-      inputFormatters: inputFormatters,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
         helperText: helperText,
@@ -1159,27 +1049,6 @@ class _CustomTextField extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class CapitalizeFirstLetterFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    final text = newValue.text;
-
-    final capitalizedText = text[0].toUpperCase() + text.substring(1);
-
-    return newValue.copyWith(
-      text: capitalizedText,
-      selection: newValue.selection,
     );
   }
 }

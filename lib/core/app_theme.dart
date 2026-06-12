@@ -3,22 +3,25 @@ import 'package:flutter/material.dart';
 class AppTheme {
 
   /// Paleta de colores #69444B
-  static const Color tulipanes = Color(0xFFF0B63E);
+  static const Color azulOscuro = Color(0xFF0c274b); //F0B63E
   static const Color marBaltico = Color(0xFF2E2A36);
   static const Color bermudas = Color(0xFF83C3DB);
   static const Color grisBermuda = Color(0xFF768CA4);
   static const Color textColor = Color(0xFF504C4C);
+  static const Color dorado = Color(0xFF9d8353);
+  static const Color azul = Color(0xFF5f5dfd);
+
 
 
   static ThemeData lightTheme = ThemeData(
 
     scaffoldBackgroundColor: Colors.white,
 
-    primaryColor: tulipanes,
+    primaryColor: azulOscuro,
 
     colorScheme: const ColorScheme(
       brightness: Brightness.light,
-      primary: tulipanes,
+      primary: azulOscuro,
       onPrimary: Colors.white,
       secondary: bermudas,
       onSecondary: Colors.white,
@@ -31,14 +34,14 @@ class AppTheme {
     ),
 
     appBarTheme: const AppBarTheme(
-      backgroundColor: tulipanes,
+      backgroundColor: azulOscuro,
       foregroundColor: Colors.white,
       elevation: 0,
     ),
 
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: tulipanes,
+        backgroundColor: azulOscuro,
         foregroundColor: Colors.black,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),

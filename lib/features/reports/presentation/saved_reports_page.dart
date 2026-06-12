@@ -12,7 +12,7 @@ import '../data/datasources/reports_remote_datasource.dart';
 import '../domain/entities/local_report.dart';
 import '../domain/entities/report_type.dart';
 import 'saved_report_detail_page.dart';
-
+import '../../../../core/app_theme.dart';
 class SavedReportsPage extends StatefulWidget {
   final User user;
   const SavedReportsPage({
@@ -90,11 +90,11 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
   Color getStatusColor(String status) {
     switch (status) {
       case "draft":
-        return Colors.orange;
+        return AppTheme.dorado;
       case "sent":
         return Colors.green;
       default:
-        return Colors.grey;
+        return AppTheme.textColor;
     }
   }
 
@@ -134,18 +134,107 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Enviar reporte"),
-        content: const Text(
-          "¿Deseas enviar este reporte borrador ahora?",
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
         ),
+        titlePadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AppTheme.azulOscuro,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.send_outlined,
+                color: Colors.white,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Enviar reporte",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.dorado.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.cloud_upload_outlined,
+                color: AppTheme.dorado,
+              ),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "¿Deseas enviar este reporte borrador ahora?",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.marBaltico,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "Se requiere conexión a internet.",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(
+                color: AppTheme.textColor,
+              ),
+            ),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Enviar"),
+            icon: const Icon(Icons.send),
+            label: const Text("Enviar"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.dorado,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
         ],
       ),
@@ -293,16 +382,18 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
   }
 
   Widget _statusBadge(LocalReport item) {
+    final color = getStatusColor(item.status);
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 12,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: getStatusColor(item.status).withOpacity(0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: getStatusColor(item.status).withOpacity(0.35),
+          color: color.withOpacity(0.35),
         ),
       ),
       child: Row(
@@ -313,7 +404,7 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
                 ? Icons.check_circle_outline
                 : Icons.edit_note_outlined,
             size: 16,
-            color: getStatusColor(item.status),
+            color: color,
           ),
           const SizedBox(width: 6),
           Text(
@@ -321,7 +412,7 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 13,
-              color: getStatusColor(item.status),
+              color: color,
             ),
           ),
         ],
@@ -334,11 +425,19 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
       dynamic key,
       LocalReport item,
       ) {
+    final isDraft = item.status == "draft";
+
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
-      elevation: 4,
+      elevation: 2,
+      color: Colors.white,
+      shadowColor: AppTheme.dorado.withOpacity(0.18),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: AppTheme.dorado.withOpacity(0.30),
+          width: 1,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -348,28 +447,49 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: AppTheme.dorado.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.description_outlined,
+                    color: AppTheme.dorado,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    item.reportTitle,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.reportTitle,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: AppTheme.marBaltico,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.reportElementDescription,
+                        style: const TextStyle(
+                          color: AppTheme.textColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 10),
                 _statusBadge(item),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              item.reportElementDescription,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 14),
+
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
@@ -377,17 +497,19 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: AppTheme.dorado.withOpacity(0.06),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(
+                  color: AppTheme.dorado.withOpacity(0.25),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(
                     Icons.qr_code_2,
-                    size: 18,
-                    color: Colors.grey,
+                    size: 20,
+                    color: AppTheme.dorado,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -399,6 +521,7 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
+                            color: AppTheme.marBaltico,
                           ),
                         ),
                         if (item.elementoResumen.trim().isNotEmpty) ...[
@@ -406,7 +529,7 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
                           Text(
                             item.elementoResumen,
                             style: const TextStyle(
-                              color: Colors.grey,
+                              color: AppTheme.textColor,
                               fontSize: 13,
                             ),
                           ),
@@ -417,70 +540,40 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-            if (item.evidenciasPaths.isNotEmpty)
-              Text(
-                "${item.evidenciasPaths.length} evidencia(s)",
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 13,
-                ),
-              ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
 
-                /// 👁 VER / EDITAR
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () async {
-                      if (item.status == "draft") {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ReportFormPage(
-                              user: widget.user,
-                              report: buildReportType(item),
-                              editingReport: item,
-                              reportKey: key,
-                            ),
-                          ),
-                        );
-                      } else {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SavedReportDetailPage(
-                              report: item,
-                              reportKey: key,
-                              user: widget.user,
-                            ),
-                          ),
-                        );
-                      }
-
-                      if (!mounted) return;
-                      await loadReports();
-                    },
-                    icon: const Icon(Icons.visibility),
-                    label: const Text("Ver detalles"),
+            if (item.evidenciasPaths.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.photo_camera_outlined,
+                    size: 18,
+                    color: AppTheme.dorado,
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "${item.evidenciasPaths.length} evidencia(s)",
+                    style: const TextStyle(
+                      color: AppTheme.textColor,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ],
 
-                if (item.status == "draft") ...[
+            const SizedBox(height: 16),
 
-                  const SizedBox(width: 10),
-
-                  /// 🚀 ENVIAR
-                  Expanded(
+            if (isDraft)
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.dorado,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -490,33 +583,103 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
                           ? null
                           : () => confirmSendDraft(key, item),
                       icon: const Icon(Icons.send),
-                      label: const Text("Enviar"),
+                      label: const Text("Enviar reporte"),
                     ),
                   ),
 
-                  const SizedBox(width: 10),
+                  const SizedBox(height: 10),
 
-                  /// ❌ ELIMINAR
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.marBaltico,
+                            side: BorderSide(
+                              color: AppTheme.dorado.withOpacity(0.55),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ReportFormPage(
+                                  user: widget.user,
+                                  report: buildReportType(item),
+                                  editingReport: item,
+                                  reportKey: key,
+                                ),
+                              ),
+                            );
+
+                            if (!mounted) return;
+                            await loadReports();
+                          },
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text("Editar"),
                         ),
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
                       ),
-                      onPressed: sending
-                          ? null
-                          : () => confirmDeleteReport(key),
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text("Eliminar"),
-                    ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: sending
+                              ? null
+                              : () => confirmDeleteReport(key),
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text("Eliminar"),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ],
-            ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.marBaltico,
+                    side: BorderSide(
+                      color: AppTheme.dorado.withOpacity(0.55),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SavedReportDetailPage(
+                          report: item,
+                          reportKey: key,
+                          user: widget.user,
+                        ),
+                      ),
+                    );
+
+                    if (!mounted) return;
+                    await loadReports();
+                  },
+                  icon: const Icon(Icons.visibility_outlined),
+                  label: const Text("Ver detalles"),
+                ),
+              ),
           ],
         ),
       ),
@@ -533,11 +696,23 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppTheme.dorado.withOpacity(0.35),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(),
+              const CircularProgressIndicator(
+                color: AppTheme.dorado,
+              ),
               const SizedBox(height: 18),
               Text(
                 sendingMessage,
@@ -545,6 +720,7 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.marBaltico,
                 ),
               ),
             ],
@@ -565,8 +741,47 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
           if (loading)
             const Center(child: CircularProgressIndicator())
           else if (reports.isEmpty)
-            const Center(
-              child: Text("No hay reportes guardados"),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: AppTheme.dorado.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Icon(
+                        Icons.folder_copy_outlined,
+                        color: AppTheme.dorado,
+                        size: 34,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "No hay reportes guardados",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.marBaltico,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      "Los reportes que guardes o envíes aparecerán aquí.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             )
           else
             ListView.builder(
@@ -622,25 +837,112 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
       );
     }
   }
+
   Future<void> confirmDeleteReport(dynamic key) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Eliminar reporte"),
-        content: const Text(
-          "¿Estás seguro de eliminar este borrador?",
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
         ),
+        titlePadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AppTheme.azulOscuro,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.delete_outline,
+                color: Colors.white,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Eliminar reporte",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.warning_amber_outlined,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "¿Estás seguro de eliminar este borrador?",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.marBaltico,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "Esta acción no se puede deshacer.",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(
+                color: AppTheme.textColor,
+              ),
+            ),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.delete_outline),
+            label: const Text("Eliminar"),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Eliminar"),
           ),
         ],
       ),

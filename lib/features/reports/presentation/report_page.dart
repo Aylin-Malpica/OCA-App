@@ -71,73 +71,103 @@ class _ReportsPageState extends State<ReportsPage> {
       appBar: AppBar(
         title: const Text("Generar reporte"),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: loading
-            ? const Center(
-          child: CircularProgressIndicator(),
-        )
-            : Column(
-          children: [
-            Card(
-              elevation: 6,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 18,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: loading
+              ? const Center(
+            child: CircularProgressIndicator(),
+          )
+              : Column(
+            children: [
+              Card(
+                elevation: 2,
+                color: Colors.white,
+                shadowColor: AppTheme.dorado.withOpacity(0.18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(
+                    color: AppTheme.dorado.withOpacity(0.35),
+                    width: 1,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      child: Icon(Icons.assessment),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        "MÓDULO DE REPORTES",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: AppTheme.dorado.withOpacity(0.15),
+                        child: const Icon(
+                          Icons.assessment,
+                          color: AppTheme.dorado,
                         ),
                       ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "MÓDULO DE REPORTES",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.marBaltico,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              "Selecciona el tipo de reporte que deseas generar",
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                color: AppTheme.textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              Expanded(
+                child: reports.isEmpty
+                    ? const Center(
+                  child: Text(
+                    "No hay tipos de reporte sincronizados",
+                    style: TextStyle(
+                      color: AppTheme.textColor,
+                      fontSize: 15,
                     ),
-                  ],
+                  ),
+                )
+                    : ListView.separated(
+                  itemCount: reports.length,
+                  separatorBuilder: (_, __) =>
+                  const SizedBox(height: 18),
+                  itemBuilder: (context, index) {
+                    final report = reports[index];
+
+                    return _reportCard(
+                      context: context,
+                      title: report.titulo,
+                      subtitle: report.tipoReporte,
+                      onTap: () {
+                        openReportForm(report);
+                      },
+                    );
+                  },
                 ),
               ),
-            ),
-
-            const SizedBox(height: 25),
-
-            Expanded(
-              child: reports.isEmpty
-                  ? const Center(
-                child: Text(
-                  "No hay tipos de reporte sincronizados",
-                ),
-              )
-                  : ListView.separated(
-                itemCount: reports.length,
-                separatorBuilder: (_, __) =>
-                const SizedBox(height: 18),
-                itemBuilder: (context, index) {
-                  final report = reports[index];
-
-                  return _reportCard(
-                    context: context,
-                    title: report.titulo,
-                    subtitle: report.tipoReporte,
-                    onTap: () {
-                      openReportForm(report);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -151,9 +181,15 @@ Widget _reportCard({
   required VoidCallback onTap,
 }) {
   return Card(
-    elevation: 4,
+    elevation: 2,
+    color: Colors.white,
+    shadowColor: AppTheme.dorado.withOpacity(0.18),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
+      side: BorderSide(
+        color: AppTheme.dorado.withOpacity(0.30),
+        width: 1,
+      ),
     ),
     child: Padding(
       padding: const EdgeInsets.all(18),
@@ -164,10 +200,10 @@ Widget _reportCard({
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: AppTheme.tulipanes.withOpacity(0.15),
-                child: Icon(
+                backgroundColor: AppTheme.dorado.withOpacity(0.15),
+                child: const Icon(
                   Icons.description_outlined,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: AppTheme.dorado,
                 ),
               ),
               const SizedBox(width: 14),
@@ -180,13 +216,14 @@ Widget _reportCard({
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
+                        color: AppTheme.marBaltico,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Colors.grey,
+                        color: AppTheme.textColor,
                         fontSize: 13.5,
                       ),
                     ),
@@ -195,25 +232,36 @@ Widget _reportCard({
               ),
             ],
           ),
+
           const SizedBox(height: 18),
-          const Divider(),
+
+          Divider(
+            color: AppTheme.dorado.withOpacity(0.25),
+          ),
+
           const SizedBox(height: 10),
+
           const Text(
             "Descripción",
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
+              color: AppTheme.marBaltico,
             ),
           ),
+
           const SizedBox(height: 6),
+
           Text(
             "Genera el formulario correspondiente para $title.",
             style: const TextStyle(
-              color: Colors.grey,
+              color: AppTheme.textColor,
               fontSize: 14,
             ),
           ),
+
           const SizedBox(height: 18),
+
           SizedBox(
             width: double.infinity,
             height: 46,
@@ -221,7 +269,14 @@ Widget _reportCard({
               onPressed: onTap,
               icon: const Icon(Icons.arrow_forward),
               label: const Text("Generar reporte"),
-
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
         ],

@@ -2,14 +2,19 @@ import '../../../../core/network/network_info.dart';
 import '../../domain/entities/user.dart';
 import '../datasources/login_local_datasource.dart';
 import '../datasources/login_remote_datasource.dart';
+import '../../domain/entities/internal_employee_data.dart';
 
 class LoginResult {
   final String status;
   final User? user;
+  final InternalEmployeeData? empleadoData;
 
-  LoginResult(this.status, this.user);
+  LoginResult(
+      this.status,
+      this.user, [
+        this.empleadoData,
+      ]);
 }
-
 class LoginRepository {
   final LoginRemoteDatasource remote;
   final LoginLocalDatasource local;
@@ -17,9 +22,10 @@ class LoginRepository {
   LoginRepository(this.remote, this.local);
 
   Future<LoginResult> verifyEmployee(String employeeId) async {
-    print("aylin");
+    print("VERIFY EMPLOYEE INPUT: $employeeId");
 
     final hasInternet = await NetworkInfo().hasInternet();
+
     if (!hasInternet) {
       final localUser = await local.getUserByEmployee(employeeId);
 
@@ -38,30 +44,60 @@ class LoginRepository {
 
     final response = await remote.verifyEmployee(employeeId);
 
+    print("VERIFY EMPLOYEE RESPONSE: $response");
+
     if (response == null) {
       return LoginResult("error", null);
     }
 
+    final success = response["success"] == true;
     final data = response["data"];
 
-    if (data == null) {
+    if (!success || data == null) {
       return LoginResult("not_exists", null);
     }
 
-    final requiresLogin = data["requiresLogin"];
-    final registrationStarted = data["registrationStarted"];
+    final requiresLogin = data["requiresLogin"] == true;
+    final registrationStarted = data["registrationStarted"] == true;
+    final requiresRegistration = data["requiresRegistration"] == true;
 
-    if (registrationStarted == true && requiresLogin == false) {
-      return LoginResult("registration_started", null);
-    }
+    final userJson = data["userData"];
+    final empleadoJson = data["empleadoData"];
 
-    if (requiresLogin == true) {
-      final userJson = data["userData"];
+    /// ✅ USUARIO YA EXISTE Y DEBE INICIAR SESIÓN
+    if (requiresLogin && userJson != null) {
       final user = User.fromJson(userJson);
 
       await local.saveUser(user);
 
       return LoginResult("requires_login", user);
+    }
+
+    /// 🟡 EMPLEADO EXISTE, PERO AÚN NO TIENE USUARIO
+    /// Aquí entra tu caso:
+    /// requiresLogin: false
+    /// registrationStarted: false
+    /// requiresRegistration: true
+    if (requiresRegistration && empleadoJson != null) {
+      final empleadoData = InternalEmployeeData.fromJson(empleadoJson);
+
+      return LoginResult(
+        "requires_registration",
+        null,
+        empleadoData,
+      );
+    }
+
+    /// 🔥 REGISTRO YA INICIADO
+    /// También mandamos empleadoData a la vista.
+    if (registrationStarted && !requiresLogin && empleadoJson != null) {
+      final empleadoData = InternalEmployeeData.fromJson(empleadoJson);
+
+      return LoginResult(
+        "registration_started",
+        null,
+        empleadoData,
+      );
     }
 
     return LoginResult("error", null);

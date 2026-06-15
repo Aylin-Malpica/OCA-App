@@ -112,7 +112,7 @@ class ExternalRegisterRemoteDatasource {
     required String nombres,
     required String apellidoPaterno,
     required String apellidoMaterno,
-    required String correo,
+    required String? correo,
     required String contrasenia,
     required String confirmarContrasenia,
     required int unidadNegocioId,
@@ -133,21 +133,21 @@ class ExternalRegisterRemoteDatasource {
       "$baseURL/auth/usuarios-moviles/registrar-externo",
     );
 
+    final String? correoFinal =
+    correo == null || correo.trim().isEmpty ? null : correo.trim();
+
     final Map<String, dynamic> body = {
       "nombreUsuario": nombreUsuario,
       "nombres": nombres,
       "apellidoPaterno": apellidoPaterno,
       "apellidoMaterno": apellidoMaterno,
+      "correo": correoFinal,
       "contrasenia": contrasenia,
       "confirmarContrasenia": confirmarContrasenia,
       "unidadNegocioId": unidadNegocioId,
       "departamentoId": departamentoId,
       "ubicacionTecnicaId": ubicacionTecnicaId,
     };
-
-    if (correo.trim().isNotEmpty) {
-      body["correo"] = correo.trim();
-    }
 
     final response = await http.post(
       uri,
@@ -162,19 +162,34 @@ class ExternalRegisterRemoteDatasource {
     print("REGISTER EXTERNAL URL: $uri");
     print("REGISTER EXTERNAL STATUS: ${response.statusCode}");
     print("REGISTER EXTERNAL BODY REQUEST: ${jsonEncode(body)}");
-    print("REGISTER EXTERNAL BODY RESPONSE: ${response.body}");
+    print("REGISTER EXTERNAL BODY RESPONSE: [${response.body}]");
 
-    final data = jsonDecode(response.body);
+    Map<String, dynamic>? data;
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return data;
+    if (response.body.trim().isNotEmpty) {
+      try {
+        data = jsonDecode(response.body);
+      } catch (e) {
+        print("REGISTER EXTERNAL JSON DECODE ERROR: $e");
+      }
     }
 
-    throw Exception(
-      data["message"] ??
-          data["title"] ??
-          "No se pudo registrar el usuario externo",
-    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return data ??
+          {
+            "success": true,
+            "message": "Tu solicitud de registro externo fue enviada correctamente.",
+            "data": {
+              "nombreUsuario": nombreUsuario,
+            },
+          };
+    }
+
+    final errorMessage = data?["message"] ??
+        data?["title"] ??
+        "No se pudo registrar el usuario externo. Código: ${response.statusCode}";
+
+    throw Exception(errorMessage);
   }
 
   Future<Map<String, dynamic>> registerInternalUser({

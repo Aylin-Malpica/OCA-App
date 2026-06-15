@@ -42,6 +42,11 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
   BusinessUnit? selectedBusinessUnit;
   TechnicalLocation? selectedTechnicalLocation;
 
+  bool hasMinLength = false;
+  bool hasUppercase = false;
+  bool hasNumber = false;
+  bool hasSpecialChar = false;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +58,48 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
     nameController.addListener(generateUsername);
     lastNamePController.addListener(generateUsername);
     lastNameMController.addListener(generateUsername);
+
+    passwordController.addListener(() {
+      validatePasswordLive(passwordController.text);
+    });
+  }
+
+  void validatePasswordLive(String password) {
+    setState(() {
+      hasMinLength = password.length >= 8;
+      hasUppercase = RegExp(r'[A-Z]').hasMatch(password);
+      hasNumber = RegExp(r'[0-9]').hasMatch(password);
+      hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];]').hasMatch(password);
+    });
+  }
+
+  Widget _passwordRequirement({
+    required bool isValid,
+    required String text,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 18,
+            color: isValid ? Colors.green : AppTheme.textColor,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: isValid ? Colors.green : AppTheme.textColor,
+                fontWeight: isValid ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> loadInitialData() async {
@@ -167,12 +214,35 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
     }
   }
 
+  String? validatePassword(String password) {
+    if (password.length < 8) {
+      return "La contraseña debe tener mínimo 8 caracteres";
+    }
+
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return "La contraseña debe incluir al menos una mayúscula";
+    }
+
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      return "La contraseña debe incluir al menos un número";
+    }
+
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];]').hasMatch(password)) {
+      return "La contraseña debe incluir al menos un carácter especial";
+    }
+
+    return null;
+  }
+
   Future<void> registerExternalUser() async {
     final nombreUsuario = usernameController.text.trim();
     final nombres = nameController.text.trim();
     final apellidoPaterno = lastNamePController.text.trim();
     final apellidoMaterno = lastNameMController.text.trim();
-    final correo = emailController.text.trim();
+
+    final correoText = emailController.text.trim();
+    final String? correo = correoText.isEmpty ? null : correoText;
+
     final contrasenia = passwordController.text.trim();
     final confirmarContrasenia = confirmPasswordController.text.trim();
 
@@ -181,7 +251,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
       return;
     }
 
-    if (nombres.isEmpty) {
+    if (nombres.isEmpty) {//
       showMsg("Ingresa el nombre");
       return;
     }
@@ -196,8 +266,21 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
       return;
     }
 
+    if (correo != null &&
+        !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(correo)) {
+      showMsg("Ingresa un correo válido");
+      return;
+    }
+
     if (contrasenia.isEmpty) {
       showMsg("Ingresa la contraseña");
+      return;
+    }
+
+    final passwordError = validatePassword(contrasenia);
+
+    if (passwordError != null) {
+      showMsg(passwordError);
       return;
     }
 
@@ -229,6 +312,8 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
     setState(() {
       loadingRegister = true;
     });
+
+    final usuarioGenerado = nombreUsuario;
 
     try {
       final response =
@@ -272,30 +357,163 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
         return;
       }
 
-      await showDialog(
+      final generatedUsername = usuarioGenerado;
+
+      final navigator = Navigator.of(context);
+
+      final accepted = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          title: const Text("Registro enviado"),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const LoginPage(),
+        builder: (dialogContext) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          titlePadding: EdgeInsets.zero,
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          title: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: AppTheme.azulOscuro,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+              ),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.person_outline,
+                  color: Colors.white,
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "Registro enviado",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                      (route) => false,
-                );
-              },
-              child: const Text("Aceptar"),
+                ),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppTheme.dorado.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: AppTheme.dorado,
+                  size: 34,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppTheme.textColor,
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.dorado.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.dorado.withOpacity(0.35),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      "Tu nombre de usuario es:",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      generatedUsername,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        color: AppTheme.marBaltico,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              const Text(
+                "Guárdalo o recuérdalo, lo necesitarás para iniciar sesión.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textColor,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(true);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.dorado,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text("Aceptar"),
+              ),
             ),
           ],
         ),
       );
+
+      if (accepted == true) {
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => const LoginPage(),
+          ),
+              (route) => false,
+        );
+      }
+
+      return;
+
     } catch (e) {
       print("ERROR REGISTER EXTERNAL USER: $e");
 
@@ -768,6 +986,50 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                                       obscurePassword = !obscurePassword;
                                     });
                                   },
+                                ),
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.dorado.withOpacity(0.06),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppTheme.dorado.withOpacity(0.25),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "La contraseña debe contener:",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.marBaltico,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _passwordRequirement(
+                                      isValid: hasMinLength,
+                                      text: "Mínimo 8 caracteres",
+                                    ),
+                                    _passwordRequirement(
+                                      isValid: hasUppercase,
+                                      text: "Al menos 1 letra mayúscula",
+                                    ),
+                                    _passwordRequirement(
+                                      isValid: hasNumber,
+                                      text: "Al menos 1 número",
+                                    ),
+                                    _passwordRequirement(
+                                      isValid: hasSpecialChar,
+                                      text: "Al menos 1 carácter especial",
+                                    ),
+                                  ],
                                 ),
                               ),
 

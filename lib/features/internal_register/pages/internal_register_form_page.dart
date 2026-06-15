@@ -98,6 +98,26 @@ class _InternalRegisterFormPageState extends State<InternalRegisterFormPage> {
     }
   }
 
+  String? validatePassword(String password) {
+    if (password.length < 8) {
+      return "La contraseña debe tener mínimo 8 caracteres";
+    }
+
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return "La contraseña debe incluir al menos una mayúscula";
+    }
+
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      return "La contraseña debe incluir al menos un número";
+    }
+
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];]').hasMatch(password)) {
+      return "La contraseña debe incluir al menos un carácter especial";
+    }
+
+    return null;
+  }
+
   Future<void> continueRegister() async {
     final correo = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -105,6 +125,13 @@ class _InternalRegisterFormPageState extends State<InternalRegisterFormPage> {
 
     if (password.isEmpty) {
       showMsg("Ingresa la contraseña");
+      return;
+    }
+
+    final passwordError = validatePassword(password);
+
+    if (passwordError != null) {
+      showMsg(passwordError);
       return;
     }
 

@@ -87,8 +87,10 @@ class _HomePageState extends State<HomePage> {
     loadLastSync();
     loadUnidadNegocio();
     loadDrafts();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      autoSendDraftsIfNeeded();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await autoSyncIfNeeded();
+      await autoSendDraftsIfNeeded();
     });
   }
 
@@ -101,6 +103,112 @@ class _HomePageState extends State<HomePage> {
         lastSync = date;
       });
     }
+  }
+
+  Future<void> autoSyncIfNeeded() async {
+    final storage = SyncStorage();
+
+    final lastBackendDate = await storage.getLastBackendUpdateDate(
+      currentUser.numeroEmpleado,
+    );
+
+    final lastUiDate = await storage.getLastSyncUiDate(
+      currentUser.numeroEmpleado,
+    );
+
+    final alreadySynced = lastBackendDate != null || lastUiDate != null;
+
+    if (alreadySynced) {
+      return;
+    }
+
+    final hasInternet = await NetworkInfo().hasInternet();
+
+    if (!hasInternet) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "No tienes conexión. La sincronización inicial se realizará cuando tengas internet.",
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        titlePadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AppTheme.azulOscuro,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.sync,
+                color: Colors.white,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Sincronización inicial",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        content: const Text(
+          "Estamos preparando tus catálogos por primera vez. Esto puede tardar unos segundos.",
+          style: TextStyle(
+            color: AppTheme.textColor,
+            fontSize: 15,
+          ),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text("Aceptar"),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    await startSync();
   }
 
   Future<void> loadUnidadNegocio() async {

@@ -23,7 +23,7 @@ class User {
   final String departamento;
 
   @HiveField(6)
-  final String localidad;
+  final String ubicacionTecnica;
 
   @HiveField(7)
   final int unidadNegocioId;
@@ -37,6 +37,12 @@ class User {
   @HiveField(10)
   DateTime? lastSync;
 
+  @HiveField(11)
+  final int departamentoId;
+
+  @HiveField(12)
+  final int ubicacionTecnicaId;
+
   User({
     required this.usuarioId,
     required this.nombreUsuario,
@@ -44,24 +50,33 @@ class User {
     required this.correo,
     required this.contrasenia,
     required this.departamento,
-    required this.localidad,
+    required this.ubicacionTecnica,
     required this.unidadNegocioId,
     required this.activo,
     required this.numeroEmpleado,
+    required this.departamentoId,
+    required this.ubicacionTecnicaId,
+    this.lastSync,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final data = json["userData"] is Map<String, dynamic>
+        ? json["userData"] as Map<String, dynamic>
+        : json;
+
     return User(
-      usuarioId: json["usuarioId"] ?? 0,
-      nombreUsuario: json["nombreUsuario"] ?? "",
-      nombreCompleto: json["nombreCompleto"] ?? "",
-      correo: json["correo"] ?? "",
-      contrasenia: json["contrasenia"] ?? "",
-      departamento: json["departamento"] ?? "",
-      localidad: json["localidad"] ?? "",
-      unidadNegocioId: json["unidadNegocioId"] ?? 0,
-      activo: json["activo"] ?? true,
-      numeroEmpleado: (json["nombreUsuario"] ?? "").toString(),
+      usuarioId: data["usuarioId"] ?? 0,
+      nombreUsuario: data["nombreUsuario"]?.toString().trim() ?? "",
+      nombreCompleto: data["nombreCompleto"]?.toString().trim() ?? "",
+      correo: data["correo"]?.toString().trim() ?? "",
+      contrasenia: data["contrasenia"]?.toString() ?? "",
+      departamento: data["departamento"]?.toString().trim() ?? "",
+      ubicacionTecnica: data["ubicacionTecnica"]?.toString().trim() ?? "",
+      unidadNegocioId: data["unidadNegocioId"] ?? 0,
+      activo: data["activo"] ?? true,
+      numeroEmpleado: data["nombreUsuario"]?.toString().trim() ?? "",
+      departamentoId: data["departamentoId"] ?? 0,
+      ubicacionTecnicaId: data["ubicacionTecnicaId"] ?? 0,
     );
   }
 }

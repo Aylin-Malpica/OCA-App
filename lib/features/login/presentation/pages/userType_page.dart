@@ -107,6 +107,7 @@ class UserTypePage extends StatelessWidget {
                                 ),
                               ),
 
+
                               const SizedBox(height: 6),
 
                               Text(
@@ -117,6 +118,13 @@ class UserTypePage extends StatelessWidget {
                                   fontSize: 15,
                                   height: 1.35,
                                 ),
+                              ),
+
+                              const SizedBox(height: 18),
+
+                              _TrialVersionFooter(
+                                goldColor: goldColor,
+                                textColor: textColor,
                               ),
 
                               SizedBox(height: isSmallHeight ? 22 : 30),
@@ -195,7 +203,40 @@ class UserTypePage extends StatelessWidget {
                                 },
                               ),
 
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 22),
+
+                              const SizedBox(height: 6),
+
+                              GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text("Términos y condiciones"),
+                                      content: const Text(
+                                        "Aquí se mostrarán los términos y condiciones de la aplicación.",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: const Text("Aceptar"),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  "Términos y condiciones",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: goldColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: goldColor,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -207,6 +248,58 @@ class UserTypePage extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _TrialVersionFooter extends StatelessWidget {
+  final Color goldColor;
+  final Color textColor;
+
+  const _TrialVersionFooter({
+    required this.goldColor,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const Color warningColor = Colors.red;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: warningColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: warningColor.withOpacity(0.25),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.info_outline,
+            size: 17,
+            color: warningColor,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              "Esta es una versión de prueba de la app",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: warningColor.withOpacity(0.85),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

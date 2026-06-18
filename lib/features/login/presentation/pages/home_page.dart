@@ -282,7 +282,7 @@ class _HomePageState extends State<HomePage> {
             updatedUser.nombreCompleto != currentUser.nombreCompleto ||
                 updatedUser.correo != currentUser.correo ||
                 updatedUser.departamento != currentUser.departamento ||
-                updatedUser.localidad != currentUser.localidad ||
+                updatedUser.ubicacionTecnica != currentUser.ubicacionTecnica ||
                 updatedUser.unidadNegocioId != currentUser.unidadNegocioId;
 
         if (!updatedUser.activo) {
@@ -711,7 +711,7 @@ class _HomePageState extends State<HomePage> {
 
                             _infoRow(
                               icon: Icons.location_on,
-                              text: "Localidad: ${user.localidad}",
+                              text: "Ubicación tecnica: ${user.ubicacionTecnica}",
                             ),
 
                             const SizedBox(height: 12),

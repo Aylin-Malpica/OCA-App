@@ -61,10 +61,13 @@ class _PasswordPageState extends State<PasswordPage> {
           correo: widget.user.correo,
           contrasenia: storedHash,
           departamento: widget.user.departamento,
-          localidad: widget.user.localidad,
+          ubicacionTecnica: widget.user.ubicacionTecnica,
           unidadNegocioId: widget.user.unidadNegocioId,
           activo: widget.user.activo,
           numeroEmpleado: widget.user.numeroEmpleado,
+          departamentoId: widget.user.departamentoId,
+          ubicacionTecnicaId: widget.user.ubicacionTecnicaId,
+
         );
 
         await local.saveUser(updatedUser);

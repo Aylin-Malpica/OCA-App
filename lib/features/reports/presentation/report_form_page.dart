@@ -151,19 +151,97 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Salir del formulario"),
-        content: const Text(
-          "Tienes información capturada sin guardar. Si sales ahora, perderás los cambios. ¿Deseas salir?",
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        titlePadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AppTheme.azulOscuro,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.white,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Salir del formulario",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.dorado.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.edit_note_outlined,
+                color: AppTheme.dorado,
+              ),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Text(
+                "Tienes información capturada sin guardar. Si sales ahora, perderás los cambios. ¿Deseas salir?",
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.35,
+                  color: AppTheme.textColor,
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(
+                color: AppTheme.textColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Salir"),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            icon: const Icon(Icons.exit_to_app),
+            label: const Text("Salir"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.dorado,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 11,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
         ],
       ),
@@ -289,7 +367,24 @@ class _ReportFormPageState extends State<ReportFormPage> {
     });
   }
 
+  void setDefaultTechnicalLocationFromUser() {
+    if (selectedTechnicalLocation != null) return;
 
+    if (widget.user.ubicacionTecnicaId == 0) return;
+
+    TechnicalLocation? defaultLocation;
+
+    for (final location in technicalLocations) {
+      if (location.ubicacionTecnicaId == widget.user.ubicacionTecnicaId) {
+        defaultLocation = location;
+        break;
+      }
+    }
+
+    if (defaultLocation == null) return;
+
+    selectedTechnicalLocation = defaultLocation;
+  }
 
   Future<void> takePhoto() async {
     if (evidencias.length >= 5) {
@@ -897,7 +992,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                     selectedItemBuilder: (context) {
                       return technicalLocations.map((location) {
                         final text =
-                            "${location.claveUbicacionTecnica} - ${location.denominacion}";
+                            "${location.descripcionZona}";
 
                         return Text(
                           text,

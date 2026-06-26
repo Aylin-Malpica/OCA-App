@@ -1,4 +1,4 @@
-package com.example.app_oca
+package com.cuervo.appoca
 
 import io.flutter.embedding.android.FlutterActivity
 

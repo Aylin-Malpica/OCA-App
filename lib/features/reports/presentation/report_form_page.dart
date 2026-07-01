@@ -125,19 +125,97 @@ class _ReportFormPageState extends State<ReportFormPage> {
   Future<bool> confirmChangeReportType() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Cambiar tipo de reporte"),
-        content: const Text(
-          "Si cambias el tipo de reporte se borrarán los datos capturados del formulario actual. ¿Deseas continuar?",
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        titlePadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AppTheme.azulOscuro,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.white,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Cambiar tipo de reporte",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTheme.dorado.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.change_circle_outlined,
+                color: AppTheme.dorado,
+              ),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Text(
+                "Si cambias el tipo de reporte se borrarán los datos capturados del formulario actual. ¿Deseas continuar?",
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.35,
+                  color: AppTheme.textColor,
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(
+                color: AppTheme.textColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Continuar"),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            icon: const Icon(Icons.check),
+            label: const Text("Continuar"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.dorado,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 11,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
         ],
       ),
@@ -356,14 +434,14 @@ class _ReportFormPageState extends State<ReportFormPage> {
   }
 
   Future<void> loadTechnicalLocations() async {
-
-    final all =
-    await technicalLocationsLocal.getTechnicalLocations();
+    final all = await technicalLocationsLocal.getTechnicalLocations();
 
     if (!mounted) return;
 
     setState(() {
       technicalLocations = all;
+
+      setDefaultTechnicalLocationFromUser();
     });
   }
 
@@ -715,6 +793,13 @@ class _ReportFormPageState extends State<ReportFormPage> {
                     decoration: _inputDecoration(
                       label: "Tipo de reporte",
                       icon: Icons.assignment_outlined,
+                    ).copyWith(
+                      contentPadding: const EdgeInsets.only(
+                        top: 24,
+                        bottom: 18,
+                        left: 12,
+                        right: 12,
+                      ),
                     ),
                     items: reportElements.map((e) {
                       return DropdownMenuItem<ReportElement>(
@@ -977,7 +1062,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                     ),
                     items: technicalLocations.map((location) {
                       final text =
-                          "${location.claveUbicacionTecnica} - ${location.denominacion}";
+                          "${location.descripcionZona} -";
 
                       return DropdownMenuItem<TechnicalLocation>(
                         value: location,

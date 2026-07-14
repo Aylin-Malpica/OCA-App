@@ -44,7 +44,7 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
     loadReports();
   }
 
-  Future<void> loadReports() async {
+  Future<void> loadReports({bool syncTracking = true}) async {
     setState(() {
       loading = true;
     });
@@ -65,6 +65,10 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
         reports = list;
         loading = false;
       });
+
+      if (syncTracking) {
+        await syncReportsTrackingStatus();
+      }
     } catch (e) {
       print("ERROR LOAD REPORTS: $e");
 
@@ -74,6 +78,66 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
         loading = false;
       });
     }
+  }
+
+  Future<void> syncReportsTrackingStatus() async {
+    final hasInternet = await NetworkInfo().hasInternet();
+
+    if (!hasInternet) return;
+
+    for (final entry in reports) {
+      final key = entry.key;
+      final report = entry.value;
+
+      // Solo reportes enviados
+      if (report.status != "sent") continue;
+
+      // Debe tener ID del reporte generado en backend
+      if (report.resultadoReporteId == null) continue;
+
+      // Si ya está cancelado o resuelto, ya no se consulta
+      if (report.seguimientoEstatusId == 3 ||
+          report.seguimientoEstatusId == 4) {
+        print(
+          "SE OMITE REPORTE ${report.resultadoReporteId}: "
+              "${report.seguimientoEstatus}",
+        );
+        continue;
+      }
+
+      try {
+        final response = await reportsRemote.getReportTrackingStatus(
+          report.resultadoReporteId!,
+        );
+
+        if (response == null ||
+            response["success"] != true ||
+            response["data"] == null) {
+          continue;
+        }
+
+        final data = response["data"];
+
+        final updatedReport = report.copyWith(
+          seguimientoEstatusId: data["estatusId"],
+          seguimientoEstatus: data["estatus"],
+          seguimientoCorreoResponsable: data["correoResponsable"],
+          seguimientoTipoResponsable: data["tipoResponsable"],
+          seguimientoFechaActualizacion: DateTime.now().toIso8601String(),
+        );
+
+        await localDatasource.updateReport(key, updatedReport);
+      } catch (e) {
+        print(
+          "ERROR SYNC TRACKING STATUS "
+              "${report.resultadoReporteId}: $e",
+        );
+      }
+    }
+
+    if (!mounted) return;
+
+    await loadReports(syncTracking: false);
   }
 
   String getStatusLabel(String status) {
@@ -541,6 +605,8 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
               ),
             ),
 
+            _trackingStatusBanner(item),
+
             if (item.evidenciasPaths.isNotEmpty) ...[
               const SizedBox(height: 10),
               Row(
@@ -951,5 +1017,175 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
     if (confirm == true) {
       await deleteReport(key);
     }
+  }
+  Widget _trackingStatusBanner(LocalReport item) {
+    final estatus = item.seguimientoEstatus;
+
+    if (item.status != "sent" ||
+        estatus == null ||
+        estatus.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final color = getTrackingStatusColor(
+      item.seguimientoEstatusId,
+    );
+
+    final icon = getTrackingStatusIcon(
+      item.seguimientoEstatusId,
+    );
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 12,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: color.withOpacity(0.35),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              size: 21,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Estatus de seguimiento",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  estatus,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color getTrackingStatusColor(int? statusId) {
+    switch (statusId) {
+      case 1: // Abierto
+        return Colors.blue;
+      case 2: // En proceso
+        return Colors.amber.shade700;
+      case 3: // Cancelado
+        return Colors.red;
+      case 4: // Resuelto
+        return Colors.green;
+      default:
+        return AppTheme.textColor;
+    }
+  }
+
+  IconData getTrackingStatusIcon(int? statusId) {
+    switch (statusId) {
+      case 1:
+        return Icons.lock_open_outlined;
+      case 2:
+        return Icons.pending_actions_outlined;
+      case 3:
+        return Icons.cancel_outlined;
+      case 4:
+        return Icons.check_circle_outline;
+      default:
+        return Icons.info_outline;
+    }
+  }
+  Widget trackingStatusHeader(LocalReport report) {
+    final estatus = report.seguimientoEstatus ?? "Sin estatus";
+
+    final color = getTrackingStatusColor(
+      report.seguimientoEstatusId,
+    );
+
+    final icon = getTrackingStatusIcon(
+      report.seguimientoEstatusId,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: color.withOpacity(0.35),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.16),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Estatus actual",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  estatus,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

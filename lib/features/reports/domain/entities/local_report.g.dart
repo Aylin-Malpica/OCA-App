@@ -45,13 +45,21 @@ class LocalReportAdapter extends TypeAdapter<LocalReport> {
       numeroEmpleado: fields[23] as String,
       ubicacionTecnicaId: fields[24] as int,
       ubicacionTecnicaDescripcion: fields[25] as String,
+      seguimientoEstatus: fields[26] as String?,
+      seguimientoCorreoResponsable: fields[27] as String?,
+      seguimientoTipoResponsable: fields[28] as String?,
+      seguimientoFechaActualizacion: fields[29] as String?,
+      seguimientoComentarios: (fields[30] as List)
+          .map((dynamic e) => (e as Map).cast<String, dynamic>())
+          .toList(),
+      seguimientoEstatusId: fields[31] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, LocalReport obj) {
     writer
-      ..writeByte(26)
+      ..writeByte(32)
       ..writeByte(0)
       ..write(obj.reporteId)
       ..writeByte(1)
@@ -103,7 +111,19 @@ class LocalReportAdapter extends TypeAdapter<LocalReport> {
       ..writeByte(24)
       ..write(obj.ubicacionTecnicaId)
       ..writeByte(25)
-      ..write(obj.ubicacionTecnicaDescripcion);
+      ..write(obj.ubicacionTecnicaDescripcion)
+      ..writeByte(26)
+      ..write(obj.seguimientoEstatus)
+      ..writeByte(27)
+      ..write(obj.seguimientoCorreoResponsable)
+      ..writeByte(28)
+      ..write(obj.seguimientoTipoResponsable)
+      ..writeByte(29)
+      ..write(obj.seguimientoFechaActualizacion)
+      ..writeByte(30)
+      ..write(obj.seguimientoComentarios)
+      ..writeByte(31)
+      ..write(obj.seguimientoEstatusId);
   }
 
   @override

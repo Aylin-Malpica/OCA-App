@@ -55,4 +55,21 @@ class ReportsRemoteDatasource {
 
     return null;
   }
+
+  Future<Map<String, dynamic>?> getReportTrackingStatus(
+      int resultadoReporteId,
+      ) async {
+    final response = await api.get(
+      "$baseURL/reporte-resultado/$resultadoReporteId/estatus",
+    );
+
+    print("GET REPORT TRACKING STATUS: ${response.statusCode}");
+    print("GET REPORT TRACKING BODY: ${response.body}");
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    return null;
+  }
 }

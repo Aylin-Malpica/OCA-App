@@ -82,6 +82,24 @@ class LocalReport {
   @HiveField(25)
   final String ubicacionTecnicaDescripcion;
 
+  @HiveField(26)
+  final String? seguimientoEstatus;
+
+  @HiveField(27)
+  final String? seguimientoCorreoResponsable;
+
+  @HiveField(28)
+  final String? seguimientoTipoResponsable;
+
+  @HiveField(29)
+  final String? seguimientoFechaActualizacion;
+
+  @HiveField(30)
+  final List<Map<String, dynamic>> seguimientoComentarios;
+
+  @HiveField(31)
+  final int? seguimientoEstatusId;
+
   LocalReport({
     required this.reporteId,
     required this.usuarioMovilId,
@@ -109,6 +127,12 @@ class LocalReport {
     required this.numeroEmpleado,
     required this.ubicacionTecnicaId,
     required this.ubicacionTecnicaDescripcion,
+    this.seguimientoEstatus,
+    this.seguimientoCorreoResponsable,
+    this.seguimientoTipoResponsable,
+    this.seguimientoFechaActualizacion,
+    this.seguimientoComentarios = const [],
+    this.seguimientoEstatusId,
   });
 
   Map<String, dynamic> toJson() {
@@ -139,6 +163,12 @@ class LocalReport {
       "numeroEmpleado": numeroEmpleado,
       "ubicacionTecnicaId":ubicacionTecnicaId,
       "ubicacionTecnicaDescripcion": ubicacionTecnicaDescripcion,
+      "seguimientoEstatus": seguimientoEstatus,
+      "seguimientoCorreoResponsable": seguimientoCorreoResponsable,
+      "seguimientoTipoResponsable": seguimientoTipoResponsable,
+      "seguimientoFechaActualizacion": seguimientoFechaActualizacion,
+      "seguimientoComentarios": seguimientoComentarios,
+      "seguimientoEstatusId": seguimientoEstatusId,
     };
   }
 
@@ -169,6 +199,12 @@ class LocalReport {
     String? numeroEmpleado,
     int ? ubicacionTecnicaId,
     String ? ubicacionTecnicaDescripcion,
+    String? seguimientoEstatus,
+    String? seguimientoCorreoResponsable,
+    String? seguimientoTipoResponsable,
+    String? seguimientoFechaActualizacion,
+    List<Map<String, dynamic>>? seguimientoComentarios,
+    int? seguimientoEstatusId,
   }) {
     return LocalReport(
       reporteId: reporteId ?? this.reporteId,
@@ -204,6 +240,12 @@ class LocalReport {
       numeroEmpleado: numeroEmpleado ?? this.numeroEmpleado,
       ubicacionTecnicaId: ubicacionTecnicaId ?? this.ubicacionTecnicaId,
       ubicacionTecnicaDescripcion: ubicacionTecnicaDescripcion ?? this.ubicacionTecnicaDescripcion,
+      seguimientoEstatus: seguimientoEstatus ?? this.seguimientoEstatus,
+      seguimientoCorreoResponsable: seguimientoCorreoResponsable ?? this.seguimientoCorreoResponsable,
+      seguimientoTipoResponsable: seguimientoTipoResponsable ?? this.seguimientoTipoResponsable,
+      seguimientoFechaActualizacion: seguimientoFechaActualizacion ?? this.seguimientoFechaActualizacion,
+      seguimientoComentarios: seguimientoComentarios ?? this.seguimientoComentarios,
+      seguimientoEstatusId: seguimientoEstatusId ?? this.seguimientoEstatusId,
     );
   }
 }

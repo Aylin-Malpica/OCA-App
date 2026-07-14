@@ -7,6 +7,9 @@ import '../domain/entities/local_report.dart';
 import '../domain/entities/report_type.dart';
 import '../../login/domain/entities/user.dart';
 import 'report_form_page.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/network_info.dart';
+import '../data/datasources/reports_remote_datasource.dart';
 
 class SavedReportDetailPage extends StatefulWidget {
   final LocalReport report;
@@ -25,10 +28,12 @@ class SavedReportDetailPage extends StatefulWidget {
       _SavedReportDetailPageState();
 }
 
-class _SavedReportDetailPageState
-    extends State<SavedReportDetailPage> {
+class _SavedReportDetailPageState extends State<SavedReportDetailPage> {
   final local = LocalReportsLocalDatasource();
+  final reportsRemote = ReportsRemoteDatasource(ApiClient());
   final ImagePicker _picker = ImagePicker();
+
+  late LocalReport currentReport;
 
   List<File> evidencias = [];
 
@@ -41,10 +46,14 @@ class _SavedReportDetailPageState
   void initState() {
     super.initState();
 
-    evidencias = widget.report.evidenciasPaths
+    currentReport = widget.report;
+
+    evidencias = currentReport.evidenciasPaths
         .map((e) => File(e))
         .where((f) => f.existsSync())
         .toList();
+
+    syncTrackingDetail();
   }
 
   ReportType buildReportType(LocalReport r) {
@@ -58,6 +67,22 @@ class _SavedReportDetailPageState
       fechaRegistro: r.fechaRegistro,
       fechaActualizacion: r.fechaActualizacion ?? r.fechaRegistro,
     );
+  }
+
+  Future<void> syncTrackingDetail() async {
+    if (currentReport.status != "sent") return;
+    if (currentReport.resultadoReporteId == null) return;
+
+    if (currentReport.seguimientoEstatusId == 3 ||
+        currentReport.seguimientoEstatusId == 4) {
+      return;
+    }
+
+    final hasInternet = await NetworkInfo().hasInternet();
+
+    if (!hasInternet) return;
+
+    // petición...
   }
 
   Future<void> takePhoto() async {
@@ -202,6 +227,268 @@ class _SavedReportDetailPageState
   void showMsg(String msg) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Color getTrackingStatusColor(int? statusId) {
+    switch (statusId) {
+      case 1: // Abierto
+        return Colors.blue;
+      case 2: // En proceso
+        return Colors.amber.shade700;
+      case 3: // Cancelado
+        return Colors.red;
+      case 4: // Resuelto
+        return Colors.green;
+      default:
+        return AppTheme.textColor;
+    }
+  }
+
+  IconData getTrackingStatusIcon(int? statusId) {
+    switch (statusId) {
+      case 1:
+        return Icons.lock_open_outlined;
+      case 2:
+        return Icons.pending_actions_outlined;
+      case 3:
+        return Icons.cancel_outlined;
+      case 4:
+        return Icons.check_circle_outline;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  Widget trackingStatusHeader(LocalReport report) {
+    final estatus = report.seguimientoEstatus ?? "Sin estatus";
+
+    final color = getTrackingStatusColor(
+      report.seguimientoEstatusId,
+    );
+
+    final icon = getTrackingStatusIcon(
+      report.seguimientoEstatusId,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: color.withOpacity(0.35),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.16),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Estatus actual",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  estatus,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget trackingSection(LocalReport r) {
+    if (r.status != "sent") {
+      return const SizedBox.shrink();
+    }
+
+    final comentarios = r.seguimientoComentarios;
+
+    return card(
+      "Seguimiento del reporte",
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          trackingStatusHeader(r),
+
+          const SizedBox(height: 14),
+
+          infoRow(
+            "Responsable",
+            r.seguimientoCorreoResponsable ?? "-",
+          ),
+
+          infoRow(
+            "Tipo de responsable",
+            r.seguimientoTipoResponsable ?? "-",
+          ),
+
+          const SizedBox(height: 8),
+
+          const Row(
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 19,
+                color: AppTheme.dorado,
+              ),
+              SizedBox(width: 8),
+              Text(
+                "Comentarios",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.marBaltico,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          if (comentarios.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppTheme.dorado.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.dorado.withOpacity(0.20),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.forum_outlined,
+                    size: 20,
+                    color: AppTheme.textColor,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      "Sin comentarios registrados.",
+                      style: TextStyle(
+                        color: AppTheme.textColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: comentarios.map((c) {
+                final activo = c["activo"] == true;
+
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    color: activo
+                        ? AppTheme.dorado.withOpacity(0.05)
+                        : Colors.grey.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: activo
+                          ? AppTheme.dorado.withOpacity(0.25)
+                          : Colors.grey.withOpacity(0.25),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: AppTheme.dorado.withOpacity(0.13),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.comment_outlined,
+                          size: 18,
+                          color: AppTheme.dorado,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c["comentario"]?.toString() ?? "-",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.marBaltico,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 7),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.schedule,
+                                  size: 14,
+                                  color: AppTheme.textColor,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  formatDate(
+                                    c["fechaRegistro"]
+                                        ?.toString() ??
+                                        "",
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+      icon: Icons.manage_search_outlined,
+    );
   }
 
   Widget card(String title, Widget child, {IconData? icon}) {
@@ -358,7 +645,7 @@ class _SavedReportDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final r = widget.report;
+    final r = currentReport;
 
     return Scaffold(
       appBar: AppBar(
@@ -502,6 +789,10 @@ class _SavedReportDetailPageState
             ),
             icon: Icons.photo,
           ),
+
+          const SizedBox(height: 14),
+
+          trackingSection(r),
 
           const SizedBox(height: 20),
           /// BOTONES

@@ -100,6 +100,9 @@ class LocalReport {
   @HiveField(31)
   final int? seguimientoEstatusId;
 
+  @HiveField(32)
+  final List<String> evidenciasUrls;
+
   LocalReport({
     required this.reporteId,
     required this.usuarioMovilId,
@@ -133,6 +136,7 @@ class LocalReport {
     this.seguimientoFechaActualizacion,
     this.seguimientoComentarios = const [],
     this.seguimientoEstatusId,
+    this.evidenciasUrls = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -169,6 +173,7 @@ class LocalReport {
       "seguimientoFechaActualizacion": seguimientoFechaActualizacion,
       "seguimientoComentarios": seguimientoComentarios,
       "seguimientoEstatusId": seguimientoEstatusId,
+      "evidenciasUrls": evidenciasUrls,
     };
   }
 
@@ -205,6 +210,7 @@ class LocalReport {
     String? seguimientoFechaActualizacion,
     List<Map<String, dynamic>>? seguimientoComentarios,
     int? seguimientoEstatusId,
+    List<String>? evidenciasUrls,
   }) {
     return LocalReport(
       reporteId: reporteId ?? this.reporteId,
@@ -246,6 +252,134 @@ class LocalReport {
       seguimientoFechaActualizacion: seguimientoFechaActualizacion ?? this.seguimientoFechaActualizacion,
       seguimientoComentarios: seguimientoComentarios ?? this.seguimientoComentarios,
       seguimientoEstatusId: seguimientoEstatusId ?? this.seguimientoEstatusId,
+      evidenciasUrls: evidenciasUrls ?? this.evidenciasUrls,
     );
+  }
+  factory LocalReport.fromRemoteJson(
+      Map<String, dynamic> json, {
+        required String numeroEmpleado,
+      }) {
+    final camposPersonalizados =
+    (json["camposPersonalizados"] as List? ?? [])
+        .map<Map<String, dynamic>>((item) {
+      final campo = Map<String, dynamic>.from(item as Map);
+
+      return {
+        "descripcion": campo["campo"]?.toString() ?? "Campo",
+        "campo": campo["campo"]?.toString() ?? "Campo",
+        "valor": campo["valor"]?.toString() ?? "",
+      };
+    }).toList();
+
+    final seguimientos =
+    (json["seguimientos"] as List? ?? [])
+        .map<Map<String, dynamic>>((item) {
+      final seguimiento =
+      Map<String, dynamic>.from(item as Map);
+
+      return {
+        "resultadoReporteSeguimientoId":
+        seguimiento["resultadoReporteSeguimientoId"],
+        "comentario":
+        seguimiento["descripcionActividad"]?.toString() ??
+            seguimiento["comentario"]?.toString() ??
+            "",
+        "fechaRegistro":
+        seguimiento["fechaRegistro"]?.toString() ?? "",
+        "activo": seguimiento["activo"] == true,
+      };
+    }).toList();
+
+    final evidenciasUrls =
+    (json["evidencias"] as List? ?? [])
+        .map<String>((item) {
+      final evidencia =
+      Map<String, dynamic>.from(item as Map);
+
+      return evidencia["url"]?.toString() ?? "";
+    })
+        .where((url) => url.trim().isNotEmpty)
+        .toList();
+
+    return LocalReport(
+      reporteId: _toInt(json["reporteId"]),
+      usuarioMovilId: _toInt(json["usuarioMovilId"]),
+      nivelRiesgoId: _toInt(json["nivelRiesgoId"]),
+      tipoIncidenciaId: _toInt(json["tipoIncidenciaId"]),
+      reporteTipoElementoId:
+      _toInt(json["reporteTipoElementoId"]),
+      correoResponsable:
+      json["correoResponsable"]?.toString() ?? "",
+      latitud: _toDouble(json["latitud"]),
+      longitud: _toDouble(json["longitud"]),
+      camposPersonalizados: camposPersonalizados,
+      fechaRegistro:
+      json["fechaRegistro"]?.toString() ??
+          DateTime.now().toIso8601String(),
+      status: "sent",
+      reportTitle:
+      json["tituloReporte"]?.toString() ??
+          "Reporte sin título",
+      reportElementDescription:
+      json["reporteTipoElemento"]?.toString() ?? "",
+      elementTypeDescription:
+      json["tipoElemento"]?.toString() ??
+          json["elementoTipo"]?.toString() ??
+          "",
+      riskLevelDescription:
+      json["nivelRiesgo"]?.toString() ?? "",
+      incidentTypeDescription:
+      json["tipoIncidencia"]?.toString() ?? "",
+      elementoId: _toInt(json["elementoId"]),
+      elementoIdentificador:
+      json["elemento"]?.toString() ?? "",
+      elementoResumen:
+      json["descripcionReporte"]?.toString() ?? "",
+      resultadoReporteId:
+      _toNullableInt(json["resultadoReporteId"]),
+      yaExistia: true,
+      evidenciasPaths: const [],
+      fechaActualizacion:
+      DateTime.now().toIso8601String(),
+      numeroEmpleado: numeroEmpleado,
+      ubicacionTecnicaId:
+      _toInt(json["ubicacionTecnicaId"]),
+      ubicacionTecnicaDescripcion:
+      json["ubicacionTecnicaZona"]?.toString() ?? "",
+      seguimientoEstatus:
+      json["estatus"]?.toString(),
+      seguimientoCorreoResponsable:
+      json["correoResponsable"]?.toString(),
+      seguimientoTipoResponsable:
+      json["tipoResponsable"]?.toString(),
+      seguimientoFechaActualizacion:
+      DateTime.now().toIso8601String(),
+      seguimientoComentarios: seguimientos,
+      seguimientoEstatusId:
+      _toNullableInt(
+        json["resultadoReporteEstatusId"],
+      ),
+      evidenciasUrls: evidenciasUrls,
+    );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+
+    return int.tryParse(value?.toString() ?? "") ?? 0;
+  }
+
+  static int? _toNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+
+    return int.tryParse(value.toString());
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+
+    return double.tryParse(value?.toString() ?? "") ?? 0.0;
   }
 }

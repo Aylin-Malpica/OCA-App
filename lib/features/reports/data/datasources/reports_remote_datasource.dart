@@ -72,4 +72,21 @@ class ReportsRemoteDatasource {
 
     return null;
   }
+
+  Future<Map<String, dynamic>?> getReportsByUser(
+      int usuarioMovilId,
+      ) async {
+    final response = await api.get(
+      "$baseURL/reporte-resultado/usuario/$usuarioMovilId",
+    );
+
+    print("GET REPORTS BY USER STATUS: ${response.statusCode}");
+    print("GET REPORTS BY USER BODY: ${response.body}");
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    return null;
+  }
 }

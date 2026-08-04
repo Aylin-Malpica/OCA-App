@@ -17,7 +17,6 @@ import '../datasources/sync_remote_datasource.dart';
 import '../../../reports/data/datasources/reports_local_datasource.dart';
 import '../../../reports/data/datasources/report_categories_local_datasource.dart';
 import '../../../reports/domain/entities/report_type.dart';
-import '../../../reports/domain/entities/report_category.dart';
 
 class SyncRepository {
   final SyncRemoteDatasource remote;

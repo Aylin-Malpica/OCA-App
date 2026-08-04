@@ -27,8 +27,6 @@ class LocalReportsLocalDatasource {
     await box.delete(key);
   }
 
-
-
   Future<Map<dynamic, LocalReport>> getReportsByUser(String numeroEmpleado) async {
     final box = Hive.box<LocalReport>("local_reports");
 
@@ -38,6 +36,69 @@ class LocalReportsLocalDatasource {
       box.toMap().entries.where(
             (e) => e.value.numeroEmpleado.trim().toLowerCase() == key,
       ),
+    );
+  }
+
+  Future<void> upsertRemoteReport(
+      LocalReport remoteReport,
+      ) async {
+    final box = Hive.box<LocalReport>("local_reports");
+
+    final resultadoReporteId =
+        remoteReport.resultadoReporteId;
+
+    if (resultadoReporteId == null) {
+      return;
+    }
+
+    dynamic existingKey;
+
+    for (final key in box.keys) {
+      final savedReport = box.get(key);
+
+      if (savedReport?.resultadoReporteId ==
+          resultadoReporteId) {
+        existingKey = key;
+        break;
+      }
+    }
+
+    if (existingKey != null) {
+      final existingReport = box.get(existingKey);
+
+      if (existingReport == null) return;
+
+      final mergedReport = remoteReport.copyWith(
+        // Conservamos las rutas locales de evidencias.
+        evidenciasPaths: existingReport.evidenciasPaths,
+      );
+
+      await box.put(existingKey, mergedReport);
+    } else {
+      await box.add(remoteReport);
+    }
+  }
+
+  bool hasCompletedInitialReportsSync(
+      int usuarioMovilId,
+      ) {
+    final box = Hive.box("sync_metadata");
+
+    return box.get(
+      "initial_reports_sync_$usuarioMovilId",
+      defaultValue: false,
+    ) ==
+        true;
+  }
+
+  Future<void> markInitialReportsSyncCompleted(
+      int usuarioMovilId,
+      ) async {
+    final box = Hive.box("sync_metadata");
+
+    await box.put(
+      "initial_reports_sync_$usuarioMovilId",
+      true,
     );
   }
 }

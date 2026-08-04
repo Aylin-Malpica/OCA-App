@@ -79,16 +79,64 @@ class _SavedReportDetailPageState extends State<SavedReportDetailPage> {
     }
 
     final hasInternet = await NetworkInfo().hasInternet();
-
     if (!hasInternet) return;
 
-    // petición...
+    try {
+      final response = await reportsRemote.getReportTrackingStatus(
+        currentReport.resultadoReporteId!,
+      );
+
+      if (response == null ||
+          response["success"] != true ||
+          response["data"] == null) {
+        return;
+      }
+
+      final data = response["data"];
+
+      final rawComentarios = (data["comentarios"] as List?) ?? [];
+
+      final comentarios = rawComentarios.map<Map<String, dynamic>>((item) {
+        final c = Map<String, dynamic>.from(item as Map);
+        return {
+          "resultadoReporteSeguimientoId":
+          c["resultadoReporteSeguimientoId"],
+          "comentario": c["comentario"]?.toString() ?? "",
+          "fechaRegistro": c["fechaRegistro"]?.toString() ?? "",
+          "activo": c["activo"] == true,
+        };
+      }).toList();
+
+      final estatusId = _mapEstatusTextoAId(data["estatus"]?.toString());
+
+      final updatedReport = currentReport.copyWith(
+        seguimientoEstatusId: estatusId,
+        seguimientoEstatus: data["estatus"],
+        seguimientoCorreoResponsable: data["correoResponsable"],
+        seguimientoTipoResponsable: data["tipoResponsable"],
+        seguimientoFechaActualizacion: DateTime.now().toIso8601String(),
+        seguimientoComentarios: comentarios,
+      );
+
+      await local.updateReport(widget.reportKey, updatedReport);
+
+      if (!mounted) return;
+
+      setState(() {
+        currentReport = updatedReport;
+      });
+    } catch (e) {
+      debugPrint("ERROR SYNC TRACKING DETAIL: $e");
+    }
   }
 
   Future<void> takePhoto() async {
     if (!isDraft) return;
 
-    if (evidencias.length >= 5) {
+    final totalEvidencias =
+        evidencias.length + currentReport.evidenciasUrls.length;
+
+    if (totalEvidencias >= 5) {
       showMsg("Máximo 5 fotos");
       return;
     }
@@ -643,6 +691,80 @@ class _SavedReportDetailPageState extends State<SavedReportDetailPage> {
     );
   }
 
+  Widget networkImageItem(String url) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FullNetworkImagePage(
+              imageUrl: url,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.dorado.withOpacity(0.35),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            url,
+            width: 100,
+            height: 100,
+            fit: BoxFit.cover,
+            loadingBuilder: (
+                context,
+                child,
+                loadingProgress,
+                ) {
+              if (loadingProgress == null) {
+                return child;
+              }
+
+              return const Center(
+                child: SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppTheme.dorado,
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (
+                context,
+                error,
+                stackTrace,
+                ) {
+              debugPrint(
+                "Error cargando evidencia: $url\n$error",
+              );
+
+              return Container(
+                color: Colors.grey.shade100,
+                child: const Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.grey,
+                    size: 34,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = currentReport;
@@ -760,32 +882,57 @@ class _SavedReportDetailPageState extends State<SavedReportDetailPage> {
           /// EVIDENCIAS
           card(
             "Evidencias",
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                ...evidencias.map(imageItem),
-                if (isDraft && evidencias.length < 5)
-                  GestureDetector(
-                    onTap: takePhoto,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: AppTheme.dorado.withOpacity(0.08),
-                        border: Border.all(
-                          color: AppTheme.dorado.withOpacity(0.45),
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: AppTheme.dorado,
-                        size: 30,
-                      ),
+            Builder(
+              builder: (context) {
+                final localImages = evidencias.map(imageItem).toList();
+
+                final remoteImages = r.evidenciasUrls
+                    .where((url) => url.trim().isNotEmpty)
+                    .map(networkImageItem)
+                    .toList();
+
+                final totalEvidencias =
+                    localImages.length + remoteImages.length;
+
+                if (totalEvidencias == 0 && !isDraft) {
+                  return const Text(
+                    "Sin evidencias registradas.",
+                    style: TextStyle(
+                      color: AppTheme.textColor,
                     ),
-                  ),
-              ],
+                  );
+                }
+
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    ...localImages,
+                    ...remoteImages,
+
+                    if (isDraft && totalEvidencias < 5)
+                      GestureDetector(
+                        onTap: takePhoto,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: AppTheme.dorado.withOpacity(0.08),
+                            border: Border.all(
+                              color: AppTheme.dorado.withOpacity(0.45),
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: AppTheme.dorado,
+                            size: 30,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
             icon: Icons.photo,
           ),
@@ -886,6 +1033,88 @@ class FullImagePage extends StatelessWidget {
       body: Center(
         child: InteractiveViewer(
           child: Image.file(file),
+        ),
+      ),
+    );
+  }
+}
+int? _mapEstatusTextoAId(String? estatus) {
+  if (estatus == null) return null;
+
+  switch (estatus.trim().toLowerCase()) {
+    case "abierto":
+      return 1;
+    case "en proceso":
+      return 2;
+    case "cancelado":
+      return 3;
+    case "resuelto":
+      return 4;
+    default:
+      return null;
+  }
+}
+class FullNetworkImagePage extends StatelessWidget {
+  final String imageUrl;
+
+  const FullNetworkImagePage({
+    super.key,
+    required this.imageUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: const Text("Evidencia"),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 5,
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            loadingBuilder: (
+                context,
+                child,
+                loadingProgress,
+                ) {
+              if (loadingProgress == null) {
+                return child;
+              }
+
+              return const CircularProgressIndicator(
+                color: Colors.white,
+              );
+            },
+            errorBuilder: (
+                context,
+                error,
+                stackTrace,
+                ) {
+              return const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white,
+                    size: 52,
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    "No fue posible cargar la imagen",
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

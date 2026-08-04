@@ -118,12 +118,29 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
 
         final data = response["data"];
 
+        final rawComentarios = (data["comentarios"] as List?) ?? [];
+
+        final comentarios = rawComentarios.map<Map<String, dynamic>>((item) {
+          final c = Map<String, dynamic>.from(item as Map);
+          return {
+            "resultadoReporteSeguimientoId":
+            c["resultadoReporteSeguimientoId"],
+            "comentario": c["comentario"]?.toString() ?? "",
+            "fechaRegistro": c["fechaRegistro"]?.toString() ?? "",
+            "activo": c["activo"] == true,
+          };
+        }).toList();
+
+        // El backend aún no regresa estatusId, se infiere del texto
+        final estatusId = _mapEstatusTextoAId(data["estatus"]?.toString());
+
         final updatedReport = report.copyWith(
-          seguimientoEstatusId: data["estatusId"],
+          seguimientoEstatusId: estatusId,
           seguimientoEstatus: data["estatus"],
           seguimientoCorreoResponsable: data["correoResponsable"],
           seguimientoTipoResponsable: data["tipoResponsable"],
           seguimientoFechaActualizacion: DateTime.now().toIso8601String(),
+          seguimientoComentarios: comentarios,
         );
 
         await localDatasource.updateReport(key, updatedReport);
@@ -138,6 +155,24 @@ class _SavedReportsPageState extends State<SavedReportsPage> {
     if (!mounted) return;
 
     await loadReports(syncTracking: false);
+  }
+
+// Ajusta estos valores exactamente a como los use tu backend/enum real
+  int? _mapEstatusTextoAId(String? estatus) {
+    if (estatus == null) return null;
+
+    switch (estatus.trim().toLowerCase()) {
+      case "abierto":
+        return 1;
+      case "en proceso":
+        return 2;
+      case "cancelado":
+        return 3;
+      case "resuelto":
+        return 4;
+      default:
+        return null;
+    }
   }
 
   String getStatusLabel(String status) {

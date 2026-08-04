@@ -241,8 +241,11 @@ class _HomePageState extends State<HomePage> {
     try {
       final apiClient = ApiClient();
 
+      final syncRemoteDatasource =
+      SyncRemoteDatasource(apiClient);
+
       final syncRepo = SyncRepository(
-        SyncRemoteDatasource(apiClient),
+        syncRemoteDatasource,
         ReportsLocalDatasource(),
         ReportCategoriesLocalDatasource(),
         ReportElementsLocalDatasource(),
@@ -256,37 +259,54 @@ class _HomePageState extends State<HomePage> {
 
       final storage = SyncStorage();
 
-      final unidadNegocioId = currentUser.unidadNegocioId;
+      final unidadNegocioId =
+          currentUser.unidadNegocioId;
 
       if (unidadNegocioId == 0) {
-        throw Exception("El usuario no tiene unidad de negocio asignada.");
+        throw Exception(
+          "El usuario no tiene unidad de negocio asignada.",
+        );
       }
 
-      final lastBackendDate = await storage.getLastBackendUpdateDate(currentUser.numeroEmpleado);
-      final fechaConsulta = lastBackendDate ?? "2026-01-01T00:00:00";
+      final lastBackendDate =
+      await storage.getLastBackendUpdateDate(
+        currentUser.numeroEmpleado,
+      );
+
+      final isFirstSync = lastBackendDate == null;
+
+      final fechaConsulta =
+          lastBackendDate ?? "2026-01-01T00:00:00";
 
       print("FECHA CONSULTA SYNC: $fechaConsulta");
+      print(
+        "ES PRIMERA SINCRONIZACIÓN: $isFirstSync",
+      );
 
       await syncRepo.syncAllCatalogs(
         unidadNegocioId: unidadNegocioId,
         fechaActualizacion: fechaConsulta,
       );
 
-      final updatedUser = await loginRepository.syncUser(
+      final updatedUser =
+      await loginRepository.syncUser(
         currentUser.numeroEmpleado,
       );
 
       if (updatedUser != null) {
-
-        bool hasChanges =
-            updatedUser.nombreCompleto != currentUser.nombreCompleto ||
-                updatedUser.correo != currentUser.correo ||
-                updatedUser.departamento != currentUser.departamento ||
-                updatedUser.ubicacionTecnica != currentUser.ubicacionTecnica ||
-                updatedUser.unidadNegocioId != currentUser.unidadNegocioId;
+        final bool hasChanges =
+            updatedUser.nombreCompleto !=
+                currentUser.nombreCompleto ||
+                updatedUser.correo !=
+                    currentUser.correo ||
+                updatedUser.departamento !=
+                    currentUser.departamento ||
+                updatedUser.ubicacionTecnica !=
+                    currentUser.ubicacionTecnica ||
+                updatedUser.unidadNegocioId !=
+                    currentUser.unidadNegocioId;
 
         if (!updatedUser.activo) {
-
           if (!mounted) return;
 
           await showDialog(
@@ -295,7 +315,8 @@ class _HomePageState extends State<HomePage> {
             builder: (_) => AlertDialog(
               title: const Text("Sesión finalizada"),
               content: const Text(
-                "Tu usuario ha sido desactivado. Contacta a soporte.",
+                "Tu usuario ha sido desactivado. "
+                    "Contacta a soporte.",
               ),
               actions: [
                 TextButton(
@@ -334,16 +355,54 @@ class _HomePageState extends State<HomePage> {
         if (hasChanges && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Tu información fue actualizada"),
+              content: Text(
+                "Tu información fue actualizada",
+              ),
             ),
           );
         }
       }
 
-      final now = DateTime.now();
-      final backendFormatted = DateFormat("yyyy-MM-ddTHH:mm:ss").format(now);
-      final uiFormatted = DateFormat("dd/MM/yyyy hh:mm a").format(now);
+      /*
+     * Solo descarga todos los reportes cuando
+     * no existe una sincronización anterior.
+     */
+      if (isFirstSync) {
+        print(
+          "INICIANDO PRIMERA SINCRONIZACIÓN "
+              "DE REPORTES",
+        );
 
+        final syncedReports =
+        await syncRemoteDatasource
+            .syncReportsByUser(
+          usuarioMovilId:
+          currentUser.usuarioId,
+          numeroEmpleado:
+          currentUser.numeroEmpleado,
+        );
+
+        print(
+          "REPORTES SINCRONIZADOS: "
+              "$syncedReports",
+        );
+      }
+
+      final now = DateTime.now();
+
+      final backendFormatted =
+      DateFormat("yyyy-MM-ddTHH:mm:ss")
+          .format(now);
+
+      final uiFormatted =
+      DateFormat("dd/MM/yyyy hh:mm a")
+          .format(now);
+
+      /*
+     * La fecha se guarda después de sincronizar
+     * los reportes. Si la petición falla, entrará
+     * al catch y no se marcará como completada.
+     */
       await storage.saveLastBackendUpdateDate(
         backendFormatted,
         currentUser.numeroEmpleado,
@@ -362,17 +421,22 @@ class _HomePageState extends State<HomePage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Sincronización completada"),
+          content: Text(
+            "Sincronización completada",
+          ),
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       print("ERROR SYNC: $e");
+      print(stackTrace);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error al sincronizar: $e"),
+          content: Text(
+            "Error al sincronizar: $e",
+          ),
         ),
       );
     } finally {

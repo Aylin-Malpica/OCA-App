@@ -278,15 +278,6 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
       return;
     }
 
-    if (telefono.isEmpty) {
-      showMsg("El teléfono es obligatorio");
-      return;
-    }
-
-    if (!RegExp(r'^\d{10}$').hasMatch(telefono)) {
-      showMsg("Ingresa un teléfono válido (10 dígitos)");
-      return;
-    }
 
     if (contrasenia.isEmpty) {
       showMsg("Ingresa la contraseña");
@@ -495,6 +486,17 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                   color: AppTheme.textColor,
                 ),
               ),
+              const SizedBox(height: 12),
+
+              const Text(
+                "Espera a que tu encargado de zona habilite tu acceso.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color:Colors.red,
+                ),
+              ),
+
             ],
           ),
           actions: [

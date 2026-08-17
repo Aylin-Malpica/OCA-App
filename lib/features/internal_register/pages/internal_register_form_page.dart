@@ -154,6 +154,15 @@ class _InternalRegisterFormPageState extends State<InternalRegisterFormPage> {
       showMsg("Selecciona un departamento");
       return;
     }
+    if (correo.isEmpty) {
+      showMsg("El correo es obligatorio");
+      return;
+    }
+
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(correo)) {
+      showMsg("Ingresa un correo válido");
+      return;
+    }
 
     final numeroEmpleado = "000${widget.empleado.numeroEmpleado.trim()}";
 

@@ -18,6 +18,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
   final TextEditingController lastNameMController = TextEditingController();
   final TextEditingController departmentController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
   TextEditingController();
@@ -240,8 +241,8 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
     final apellidoPaterno = lastNamePController.text.trim();
     final apellidoMaterno = lastNameMController.text.trim();
 
-    final correoText = emailController.text.trim();
-    final String? correo = correoText.isEmpty ? null : correoText;
+    final correo = emailController.text.trim();
+    final telefono = phoneController.text.trim();
 
     final contrasenia = passwordController.text.trim();
     final confirmarContrasenia = confirmPasswordController.text.trim();
@@ -266,9 +267,24 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
       return;
     }
 
-    if (correo != null &&
-        !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(correo)) {
+
+    if (correo.isEmpty) {
+      showMsg("El correo es obligatorio");
+      return;
+    }
+
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(correo)) {
       showMsg("Ingresa un correo válido");
+      return;
+    }
+
+    if (telefono.isEmpty) {
+      showMsg("El teléfono es obligatorio");
+      return;
+    }
+
+    if (!RegExp(r'^\d{10}$').hasMatch(telefono)) {
+      showMsg("Ingresa un teléfono válido (10 dígitos)");
       return;
     }
 
@@ -323,6 +339,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
         apellidoPaterno: apellidoPaterno,
         apellidoMaterno: apellidoMaterno,
         correo: correo,
+        telefono: telefono,
         contrasenia: contrasenia,
         confirmarContrasenia: confirmarContrasenia,
         unidadNegocioId: selectedBusinessUnit!.unidadNegocioId,
@@ -758,6 +775,7 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
     lastNameMController.dispose();
     departmentController.dispose();
     emailController.dispose();
+    phoneController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -957,7 +975,6 @@ class _ExternalRegisterPageState extends State<ExternalRegisterPage> {
                                 label: "Correo",
                                 icon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
-                                helperText: "Opcional. Puedes dejarlo vacío.",
                               ),
                             ],
                           ),

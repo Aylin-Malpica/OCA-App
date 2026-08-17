@@ -1,3 +1,4 @@
+import 'package:app_oca/features/login/presentation/pages/profile_page.dart';
 import 'package:app_oca/features/reports/data/datasources/elements_detail_local_datasource.dart';
 import 'package:app_oca/features/reports/data/datasources/technical_location_datasource.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ import '../../../reports/presentation/saved_reports_page.dart';
 import '../../../sync/data/datasources/sync_remote_datasource.dart';
 import '../../../sync/data/repositories/sync_repositories.dart';
 
+import '../../data/datasources/usuario_movil_remote_datasource.dart';
 import '../../domain/entities/user.dart';
 import '../../data/datasources/login_local_datasource.dart';
 import '../../data/datasources/login_remote_datasource.dart';
@@ -1084,6 +1086,48 @@ class _HomePageState extends State<HomePage> {
                             );
 
                             await loadDrafts();
+                          },
+                        ),
+
+                        _menuItem(
+                          context: context,
+                          icon: Icons.person,
+                          title: "Mi\nPerfil",
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ProfilePage(
+                                  user: currentUser,
+                                  unidadNegocio: unidadNegocio,
+                                  lastSync: lastSync,
+                                  onSaveContact: (correo, telefono) async {
+                                    try {
+                                      final datasource = UsuarioMovilRemoteDatasource(ApiClient());
+
+                                      final response = await datasource.updateContacto(
+                                        usuarioMovilId: currentUser.usuarioId,
+                                        correo: correo,
+                                        telefono: telefono,
+                                      );
+
+                                      final success = response["success"] == true;
+
+                                      if (!success) return false;
+                                      await startSync();
+
+                                      return true;
+                                    } catch (e) {
+                                      print("ERROR UPDATE CONTACTO: $e");
+                                      return false;
+                                    }
+                                  },
+                                ),
+                              ),
+                            );
+
+                            if (!mounted) return;
+                            setState(() {});
                           },
                         ),
                       ],

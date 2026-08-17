@@ -29,4 +29,17 @@ class ApiClient {
       },
     );
   }
+
+  Future<http.Response> patch(String url, {Map<String, dynamic>? body}) async {
+    final token = await tokenService.getToken();
+
+    return http.patch(
+      Uri.parse(url),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(body),
+    );
+  }
 }

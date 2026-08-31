@@ -43,6 +43,9 @@ class User {
   @HiveField(12)
   final int ubicacionTecnicaId;
 
+  @HiveField(13)
+  final bool accesoPendiente;
+
   User({
     required this.usuarioId,
     required this.nombreUsuario,
@@ -57,6 +60,7 @@ class User {
     required this.departamentoId,
     required this.ubicacionTecnicaId,
     this.lastSync,
+    required this.accesoPendiente,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -77,6 +81,7 @@ class User {
       numeroEmpleado: data["nombreUsuario"]?.toString().trim() ?? "",
       departamentoId: data["departamentoId"] ?? 0,
       ubicacionTecnicaId: data["ubicacionTecnicaId"] ?? 0,
+      accesoPendiente: data["accesoPendiente"] ?? false,
     );
   }
 }

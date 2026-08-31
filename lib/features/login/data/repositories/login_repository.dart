@@ -64,7 +64,6 @@ class LoginRepository {
     final userJson = data["userData"];
     final empleadoJson = data["empleadoData"];
 
-    /// ✅ USUARIO YA EXISTE Y DEBE INICIAR SESIÓN
     if (requiresLogin && userJson != null) {
       final user = User.fromJson(userJson);
 
@@ -72,12 +71,6 @@ class LoginRepository {
 
       return LoginResult("requires_login", user);
     }
-
-    /// 🟡 EMPLEADO EXISTE, PERO AÚN NO TIENE USUARIO
-    /// Aquí entra tu caso:
-    /// requiresLogin: false
-    /// registrationStarted: false
-    /// requiresRegistration: true
     if (requiresRegistration && empleadoJson != null) {
       final empleadoData = InternalEmployeeData.fromJson(empleadoJson);
 
@@ -87,9 +80,6 @@ class LoginRepository {
         empleadoData,
       );
     }
-
-    /// 🔥 REGISTRO YA INICIADO
-    /// También mandamos empleadoData a la vista.
     if (registrationStarted && !requiresLogin && empleadoJson != null) {
       final empleadoData = InternalEmployeeData.fromJson(empleadoJson);
 

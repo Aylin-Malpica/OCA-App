@@ -530,11 +530,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
         "fechaRegistro": now(),
         "ubicacionTecnicaId":
         selectedTechnicalLocation!.ubicacionTecnicaId,
+        "unidadNegocioId": widget.user.unidadNegocioId,
       };
-
-      /*print("========== JSON REPORTE ==========");
-      print(const JsonEncoder.withIndent('  ').convert(payload));
-      print("==================================");*/
 
       int resultadoReporteId = 0;
       bool yaExistia = false;

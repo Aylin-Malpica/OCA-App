@@ -15,7 +15,7 @@ class ReportsRemoteDatasource {
       "$baseURL/reporte-resultado",
       body: payload,
     );
-
+    print("DATOS: ${payload}");
     print("SEND REPORT STATUS: ${response.statusCode}");
     print("SEND REPORT BODY: ${response.body}");
 

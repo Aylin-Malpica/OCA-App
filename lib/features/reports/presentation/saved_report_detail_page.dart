@@ -114,6 +114,7 @@ class _SavedReportDetailPageState extends State<SavedReportDetailPage> {
         seguimientoEstatus: data["estatus"],
         seguimientoCorreoResponsable: data["correoResponsable"],
         seguimientoTipoResponsable: data["tipoResponsable"],
+        descripcionResponsable: data["descripcionResponsable"]?.toString(),
         seguimientoFechaActualizacion: DateTime.now().toIso8601String(),
         seguimientoComentarios: comentarios,
       );
@@ -391,7 +392,7 @@ class _SavedReportDetailPageState extends State<SavedReportDetailPage> {
 
           infoRow(
             "Responsable",
-            r.seguimientoCorreoResponsable ?? "-",
+            r.descripcionResponsable ?? "-",
           ),
 
           infoRow(

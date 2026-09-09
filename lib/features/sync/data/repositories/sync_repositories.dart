@@ -1,3 +1,6 @@
+import 'package:app_oca/features/sync/data/datasources/catalog_seed_datasource.dart';
+import 'package:hive/hive.dart';
+
 import '../../../reports/data/datasources/custom_fields_local_datasource.dart';
 import '../../../reports/data/datasources/elements_detail_local_datasource.dart';
 import '../../../reports/data/datasources/elements_local_datasource.dart';
@@ -29,7 +32,7 @@ class SyncRepository {
   final ElementsLocalDatasource elementsCatalogLocal;
   final ElementDetailsLocalDatasource elementDetailsLocal;
   final TechnicalLocationsLocalDatasource technicalLocationsLocal;
-
+  final CatalogSeedDatasource seedDatasource;
   SyncRepository(
       this.remote,
       this.reportsLocal,
@@ -41,12 +44,31 @@ class SyncRepository {
       this.elementDetailsLocal,
       this.elementsCatalogLocal,
       this.technicalLocationsLocal,
+      this.seedDatasource,
       );
 
   Future<void> syncAllCatalogs({
     required int unidadNegocioId,
     required String fechaActualizacion,
   }) async {
+    await _seedLargeCatalogsIfNeeded();
+
+    final metadataBox = await Hive.openBox('sync_metadata');
+
+    final elementsSeedDate = metadataBox.get(
+      'elements_seed_date',
+      defaultValue: fechaActualizacion,
+    );
+
+    final elementDetailsSeedDate = metadataBox.get(
+      'element_details_seed_date',
+      defaultValue: fechaActualizacion,
+    );
+
+    final largeCatalogsSeedDate = metadataBox.get(
+      'large_catalogs_seed_date',
+      defaultValue: fechaActualizacion,
+    );
 
     final reportsData = await remote.syncCatalog(
       endpoint: "catalogos/reportes",
@@ -111,7 +133,7 @@ class SyncRepository {
     final elementosData = await remote.syncCatalog(
       endpoint: "catalogos/elementos",
       unidadNegocioId: unidadNegocioId,
-      fechaActualizacion: fechaActualizacion,
+      fechaActualizacion: elementsSeedDate,
     );
 
     final elementos = elementosData
@@ -123,7 +145,7 @@ class SyncRepository {
     final elementosDetallesData = await remote.syncCatalog(
       endpoint: "catalogos/elementos-detalles",
       unidadNegocioId: unidadNegocioId,
-      fechaActualizacion: fechaActualizacion,
+      fechaActualizacion: elementDetailsSeedDate,
     );
 
     final elementosDetalles = elementosDetallesData
@@ -145,5 +167,87 @@ class SyncRepository {
     await technicalLocationsLocal.saveTechnicalLocations(technicalLocations);
 
     print("SINCRONIZACIÓN COMPLETA");
+  }
+
+  Future<void> _seedLargeCatalogsIfNeeded() async {
+    final metadataBox = await Hive.openBox('sync_metadata');
+
+    final alreadySeeded = metadataBox.get(
+      'large_catalogs_seeded',
+      defaultValue: false,
+    );
+
+    if (alreadySeeded == true) {
+      print("CATÁLOGOS PRECARGADOS: ya existen en Hive");
+      return;
+    }
+
+    print("INICIANDO PRECARGA DE CATÁLOGOS");
+
+    final stopwatch = Stopwatch()..start();
+
+    // ELEMENTOS
+    stopwatch.reset();
+
+    final elements = await seedDatasource.loadElements();
+
+    print(
+      "SEED LOAD ELEMENTS: ${elements.length} registros "
+          "en ${stopwatch.elapsedMilliseconds} ms",
+    );
+
+    stopwatch.reset();
+
+    await elementsCatalogLocal.saveElements(elements);
+
+    print(
+      "SEED HIVE ELEMENTS: "
+          "${stopwatch.elapsedMilliseconds} ms",
+    );
+
+    // ELEMENTOS DETALLE
+    final detailFiles = [
+      'assets/catalogs/element_details_1.json',
+      'assets/catalogs/element_details_2.json',
+      'assets/catalogs/element_details_3.json',
+      'assets/catalogs/element_details_4.json',
+    ];
+
+    for (final file in detailFiles) {
+      stopwatch.reset();
+
+      final details =
+      await seedDatasource.loadElementDetailsFile(file);
+
+      print(
+        "SEED LOAD [$file]: ${details.length} registros "
+            "en ${stopwatch.elapsedMilliseconds} ms",
+      );
+
+      stopwatch.reset();
+
+      await elementDetailsLocal.saveElementDetails(details);
+
+      print(
+        "SEED HIVE [$file]: "
+            "${stopwatch.elapsedMilliseconds} ms",
+      );
+    }
+
+    await metadataBox.put(
+      'elements_seed_date',
+      '2026-08-04 09:52:00.057',
+    );
+
+    await metadataBox.put(
+      'element_details_seed_date',
+      '2026-08-04 09:52:00.057',
+    );
+
+    await metadataBox.put(
+      'large_catalogs_seeded',
+      true,
+    );
+
   }
 }

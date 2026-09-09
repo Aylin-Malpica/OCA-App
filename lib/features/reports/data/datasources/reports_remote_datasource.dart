@@ -38,10 +38,6 @@ class ReportsRemoteDatasource {
       }).toList(),
     };
 
-    print("========== ENVIANDO EVIDENCIAS ==========");
-    print("RESULTADO REPORTE ID: $resultadoReporteId");
-    print("TOTAL FOTOS: ${evidenciasBase64.length}");
-
     final response = await api.post(
       "$baseURL/reporte-resultado/$resultadoReporteId/evidencias",
       body: payload,

@@ -76,6 +76,7 @@ flutter:
     - assets/images/Original.png
     - assets/images/Registro.png
     - .env
+    - assets/catalogs/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

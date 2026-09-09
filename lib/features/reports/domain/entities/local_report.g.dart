@@ -54,13 +54,14 @@ class LocalReportAdapter extends TypeAdapter<LocalReport> {
           .toList(),
       seguimientoEstatusId: fields[31] as int?,
       evidenciasUrls: (fields[32] as List).cast<String>(),
+      descripcionResponsable: fields[33] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, LocalReport obj) {
     writer
-      ..writeByte(33)
+      ..writeByte(34)
       ..writeByte(0)
       ..write(obj.reporteId)
       ..writeByte(1)
@@ -126,7 +127,9 @@ class LocalReportAdapter extends TypeAdapter<LocalReport> {
       ..writeByte(31)
       ..write(obj.seguimientoEstatusId)
       ..writeByte(32)
-      ..write(obj.evidenciasUrls);
+      ..write(obj.evidenciasUrls)
+      ..writeByte(33)
+      ..write(obj.descripcionResponsable);
   }
 
   @override

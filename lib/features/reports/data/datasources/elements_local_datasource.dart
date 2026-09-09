@@ -5,11 +5,11 @@ class ElementsLocalDatasource {
   Future<void> saveElements(List<Elemento> items) async {
     final box = await Hive.openBox<Elemento>("elements");
 
-    for (final item in items) {
-      await box.put(item.elementoId, item);
-    }
+    final elementsMap = {
+      for (final item in items) item.elementoId: item,
+    };
 
-    await box.flush();
+    await box.putAll(elementsMap);
   }
 
   Future<List<Elemento>> getElements() async {

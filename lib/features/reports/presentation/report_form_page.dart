@@ -1059,7 +1059,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                     ),
                     items: technicalLocations.map((location) {
                       final text =
-                          "${location.descripcionZona} -";
+                          "${location.denominacion}  ";
 
                       return DropdownMenuItem<TechnicalLocation>(
                         value: location,

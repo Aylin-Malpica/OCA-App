@@ -12,6 +12,7 @@ class SyncRemoteDatasource {
   final LocalReportsLocalDatasource reportsLocalDatasource =
   LocalReportsLocalDatasource();
 
+
   final String? baseURL = dotenv.env['BASE_URL'];
 
   SyncRemoteDatasource(this.api);
@@ -29,19 +30,40 @@ class SyncRemoteDatasource {
       },
     );
 
-    final response = await api.get(uri.toString());
+    try {
+      print("SYNC START: $endpoint");
+      print("SYNC URL: $uri");
 
-    print("SYNC URL: $uri");
-    print("SYNC ENDPOINT: $endpoint");
-    print("SYNC STATUS: ${response.statusCode}");
-    print("SYNC BODY: ${response.body}");
+      final stopwatch = Stopwatch()..start();
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data["data"] ?? [];
+      final response = await api.get(uri.toString());
+
+      print(
+        "SYNC HTTP TIME [$endpoint]: "
+            "${stopwatch.elapsedMilliseconds} ms",
+      );
+
+      print("SYNC STATUS [$endpoint]: ${response.statusCode}");
+      print(
+        "SYNC BODY SIZE [$endpoint]: "
+            "${response.bodyBytes.length} bytes",
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final items = data["data"] ?? [];
+
+        print("SYNC ITEMS [$endpoint]: ${items.length}");
+
+        return items;
+      }
+
+      return [];
+    } catch (e, stackTrace) {
+      print("ERROR SYNC [$endpoint]: $e");
+      print(stackTrace);
+      rethrow;
     }
-
-    return [];
   }
 
   Future<int> syncReportsByUser({

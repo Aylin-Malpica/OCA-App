@@ -103,6 +103,9 @@ class LocalReport {
   @HiveField(32)
   final List<String> evidenciasUrls;
 
+  @HiveField(33)
+  final String? descripcionResponsable;
+
   LocalReport({
     required this.reporteId,
     required this.usuarioMovilId,
@@ -137,6 +140,7 @@ class LocalReport {
     this.seguimientoComentarios = const [],
     this.seguimientoEstatusId,
     this.evidenciasUrls = const [],
+    this.descripcionResponsable,
   });
 
   Map<String, dynamic> toJson() {
@@ -174,6 +178,7 @@ class LocalReport {
       "seguimientoComentarios": seguimientoComentarios,
       "seguimientoEstatusId": seguimientoEstatusId,
       "evidenciasUrls": evidenciasUrls,
+      "descripcionResponsable": descripcionResponsable,
     };
   }
 
@@ -211,6 +216,7 @@ class LocalReport {
     List<Map<String, dynamic>>? seguimientoComentarios,
     int? seguimientoEstatusId,
     List<String>? evidenciasUrls,
+    String? descripcionResponsable,
   }) {
     return LocalReport(
       reporteId: reporteId ?? this.reporteId,
@@ -253,6 +259,7 @@ class LocalReport {
       seguimientoComentarios: seguimientoComentarios ?? this.seguimientoComentarios,
       seguimientoEstatusId: seguimientoEstatusId ?? this.seguimientoEstatusId,
       evidenciasUrls: evidenciasUrls ?? this.evidenciasUrls,
+      descripcionResponsable: descripcionResponsable ?? this.descripcionResponsable,
     );
   }
   factory LocalReport.fromRemoteJson(
@@ -360,6 +367,7 @@ class LocalReport {
         json["resultadoReporteEstatusId"],
       ),
       evidenciasUrls: evidenciasUrls,
+      descripcionResponsable: json["descripcionResponsable"]?.toString(),
     );
   }
 

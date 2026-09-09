@@ -1,6 +1,7 @@
 import 'package:app_oca/features/login/presentation/pages/profile_page.dart';
 import 'package:app_oca/features/reports/data/datasources/elements_detail_local_datasource.dart';
 import 'package:app_oca/features/reports/data/datasources/technical_location_datasource.dart';
+import 'package:app_oca/features/sync/data/datasources/catalog_seed_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
@@ -257,6 +258,7 @@ class _HomePageState extends State<HomePage> {
         ElementDetailsLocalDatasource(),
         ElementsLocalDatasource(),
         TechnicalLocationsLocalDatasource(),
+        CatalogSeedDatasource()
       );
 
       final storage = SyncStorage();

@@ -290,7 +290,7 @@ class _TrialVersionFooter extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              "Esta es una versión de prueba de la app",
+              "Versión 1 App OCA",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: warningColor.withOpacity(0.85),

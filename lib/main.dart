@@ -15,6 +15,7 @@ import 'features/reports/domain/entities/report_type.dart';
 import 'features/reports/domain/entities/report_element.dart';
 import 'features/reports/domain/entities/risk_level.dart';
 import 'features/reports/domain/entities/technical_location.dart';
+import 'features/reports/domain/entities/custom_catalog.dart';
 
 void main() async {
 
@@ -22,7 +23,6 @@ void main() async {
 
   await Hive.initFlutter();
 
-  /// 🔥 REGISTRAR ADAPTERS
   Hive.registerAdapter(UserAdapter());
   Hive.registerAdapter(ReportTypeAdapter());
   Hive.registerAdapter(ReportCategoryAdapter());
@@ -34,16 +34,16 @@ void main() async {
   Hive.registerAdapter(ElementoAdapter());
   Hive.registerAdapter(ElementoDetalleAdapter());
   Hive.registerAdapter(TechnicalLocationAdapter());
+  Hive.registerAdapter(CustomCatalogAdapter());
+  Hive.registerAdapter(CustomCatalogDetailAdapter());
 
-  /// 🔥 ABRIR BOXES IMPORTANTES
   await Hive.openBox<User>("users");
   print("🟢 BOX USERS ABIERTO");
   await Hive.openBox<LocalReport>("local_reports");
   await Hive.openBox<TechnicalLocation>("technical_locations");
 
-  /// 🔥 ENV
   await dotenv.load(fileName: ".env");
-  print(dotenv.env['BASE_URL']);
+  //print(dotenv.env['BASE_URL']);
 
   runApp(const MyApp());
 }

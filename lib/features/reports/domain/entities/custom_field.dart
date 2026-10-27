@@ -28,6 +28,9 @@ class CustomField {
   @HiveField(7)
   final String fechaActualizacion;
 
+  @HiveField(8)
+  final int? catalogoPersonalizadoId;
+
   CustomField({
     required this.campoPersonalizadoId,
     required this.reporteTipoElementoId,
@@ -37,9 +40,13 @@ class CustomField {
     required this.obligatorio,
     required this.activo,
     required this.fechaActualizacion,
+    this.catalogoPersonalizadoId,
   });
 
   factory CustomField.fromJson(Map<String, dynamic> json) {
+    if (json["tipoValorId"] == 4) {
+      print("JSON CRUDO DEL CAMPO CATÁLOGO: $json");
+    }
     return CustomField(
       campoPersonalizadoId: json["campoPersonalizadoId"] ?? 0,
       reporteTipoElementoId: json["reporteTipoElementoId"] ?? 0,
@@ -49,6 +56,7 @@ class CustomField {
       obligatorio: json["obligatorio"] ?? false,
       activo: json["activo"] ?? false,
       fechaActualizacion: json["fechaActualizacion"] ?? "",
+      catalogoPersonalizadoId: json["catalogoPersonalizadoId"],
     );
   }
 }

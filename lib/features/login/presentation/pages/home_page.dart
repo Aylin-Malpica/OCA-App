@@ -1,4 +1,5 @@
 import 'package:app_oca/features/login/presentation/pages/profile_page.dart';
+import 'package:app_oca/features/reports/data/datasources/custom_catalogs_local_datasource.dart';
 import 'package:app_oca/features/reports/data/datasources/elements_detail_local_datasource.dart';
 import 'package:app_oca/features/reports/data/datasources/technical_location_datasource.dart';
 import 'package:app_oca/features/sync/data/datasources/catalog_seed_datasource.dart';
@@ -258,7 +259,8 @@ class _HomePageState extends State<HomePage> {
         ElementDetailsLocalDatasource(),
         ElementsLocalDatasource(),
         TechnicalLocationsLocalDatasource(),
-        CatalogSeedDatasource()
+        CatalogSeedDatasource(),
+          CustomCatalogsLocalDatasource()
       );
 
       final storage = SyncStorage();

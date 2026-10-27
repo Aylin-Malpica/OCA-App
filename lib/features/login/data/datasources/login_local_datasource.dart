@@ -14,21 +14,11 @@ class LoginLocalDatasource {
 
     await _box.put(key, user);
 
-    print("💾 USER GUARDADO:");
-    print("KEY: $key");
-    print("📦 USERS:");
-    print(_box.keys);
   }
 
   Future<User?> getUserByEmployee(String numeroEmpleado) async {
 
     final key = numeroEmpleado.trim();
-
-    print("🔍 BUSCANDO:");
-    print("KEY: $key");
-    print("📦 USERS:");
-    print(_box.keys);
-
     return _box.get(key);
   }
 

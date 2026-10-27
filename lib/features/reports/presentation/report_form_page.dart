@@ -14,6 +14,7 @@ import '../data/datasources/reports_remote_datasource.dart';
 import '../data/datasources/risk_levels_local_datasource.dart';
 import '../data/datasources/incident_types_local_datasource.dart';
 import '../data/datasources/local_reports_local_datasource.dart';
+import '../data/datasources/custom_catalogs_local_datasource.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../data/datasources/technical_location_datasource.dart';
 import '../domain/entities/element_detail.dart';
@@ -25,6 +26,7 @@ import '../domain/entities/risk_level.dart';
 import '../domain/entities/incident_type.dart';
 import '../domain/entities/local_report.dart';
 import '../domain/entities/technical_location.dart';
+import '../domain/entities/custom_catalog.dart';
 import '../../../../core/app_theme.dart';
 
 class ReportFormPage extends StatefulWidget {
@@ -55,6 +57,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
   final elementDetailsLocal = ElementDetailsLocalDatasource();
   final locationService = LocationService();
   final technicalLocationsLocal = TechnicalLocationsLocalDatasource();
+  final customCatalogsLocal = CustomCatalogsLocalDatasource();
 
   late ReportsRemoteDatasource reportsRemote;
 
@@ -68,6 +71,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
   Elemento? selectedElemento;
 
   List<CustomField> customFields = [];
+  Map<int, CustomCatalog> availableCatalogs = {};
+
   List<RiskLevel> riskLevels = [];
   List<IncidentType> incidentTypes = [];
 
@@ -339,6 +344,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
       selectedElementDetails = [];
       elementos = [];
       customFields = [];
+      availableCatalogs.clear();
       riskLevels = [];
       incidentTypes = [];
       selectedRiskLevelId = null;
@@ -404,9 +410,13 @@ class _ReportFormPageState extends State<ReportFormPage> {
   }
 
   Future<void> loadDynamicCatalogs(int reporteTipoElementoId) async {
+    print("\n===== INICIANDO loadDynamicCatalogs =====");
     final allFields = await customFieldsLocal.getCustomFields();
     final allRisk = await riskLevelsLocal.getRiskLevels();
     final allIncident = await incidentTypesLocal.getIncidentTypes();
+
+    final allCatalogs = await customCatalogsLocal.getCustomCatalogs();
+    print("TOTAL DE CATÁLOGOS EN HIVE: ${allCatalogs.length}");
 
     final fields = allFields.where((e) {
       return e.reporteTipoElementoId == reporteTipoElementoId && e.activo;
@@ -422,7 +432,40 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     for (final f in fields) {
       controllers[f.campoPersonalizadoId] = TextEditingController();
+
+      print("--- EVALUANDO CAMPO PERSONALIZADO ---");
+      print("Descripción: ${f.descripcion}");
+      print("TipoValorId: ${f.tipoValorId}");
+      print("TipoValorDesc: ${f.tipoValorDescripcion}");
+
+      // OJO AQUÍ: Tratamos de leer el ID del catálogo. Si tu clase CustomField no lo tiene mapeado, esto será null
+      int? catId;
+      try {
+        catId = (f as dynamic).catalogoPersonalizadoId;
+      } catch(_) {}
+      print("CatalogoPersonalizadoId en el campo: $catId");
+
+      if (f.tipoValorId == 4 || f.tipoValorDescripcion?.toLowerCase() == 'catalogo') {
+        print(">> ES TIPO CATÁLOGO");
+        try {
+          if (catId == null) {
+            print(">> ERROR: El campo dice ser catálogo pero su catalogoPersonalizadoId ES NULL. La API no lo está enviando o Flutter no lo está mapeando.");
+            continue;
+          }
+
+          final cat = allCatalogs.firstWhere(
+                (c) => c.catalogoPersonalizadoId == catId,
+          );
+          availableCatalogs[f.campoPersonalizadoId] = cat;
+          print(">> ¡ÉXITO! Se encontró el catálogo con ID $catId y tiene ${cat.detalles.length} detalles.");
+        } catch (e) {
+          print(">> ERROR AL BUSCAR EL CATÁLOGO EN HIVE: $e");
+        }
+      } else {
+        print(">> ES CAMPO DE TEXTO NORMAL");
+      }
     }
+    print("=========================================\n");
 
     if (!mounted) return;
 
@@ -502,9 +545,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
       saving = true;
       isSending = send;
     });
-
-
-    setState(() => saving = true);
 
     try {
       final hasInternet = await NetworkInfo().hasInternet();
@@ -722,6 +762,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
       await saveOrSend(send: true);
     }
   }
+
   InputDecoration _inputDecoration({
     required String label,
     IconData? icon,
@@ -757,6 +798,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -1097,7 +1139,44 @@ class _ReportFormPageState extends State<ReportFormPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+
+                  // MAPEO DE CAMPOS DINÁMICOS CON PRINTS PARA DEBUGGEAR
                   ...customFields.map((f) {
+                    final isCatalog = f.tipoValorId == 4 || f.tipoValorDescripcion?.toLowerCase() == 'catalogo';
+                    final catalogInfo = availableCatalogs[f.campoPersonalizadoId];
+
+                    print("BUILDING CAMPO: ${f.descripcion} | isCatalog: $isCatalog | catalogInfo != null: ${catalogInfo != null}");
+
+                    if (isCatalog && catalogInfo != null) {
+                      final activeDetails = catalogInfo.detalles.where((d) => d.activo).toList();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: DropdownButtonFormField<String>(
+                          value: controllers[f.campoPersonalizadoId]!.text.isEmpty
+                              ? null
+                              : controllers[f.campoPersonalizadoId]!.text,
+                          decoration: _inputDecoration(
+                            label: f.descripcion,
+                            icon: Icons.list_alt,
+                          ),
+                          items: activeDetails.map((detail) {
+                            return DropdownMenuItem<String>(
+                              value: detail.descripcion,
+                              child: Text(detail.descripcion),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                controllers[f.campoPersonalizadoId]!.text = val;
+                              });
+                            }
+                          },
+                        ),
+                      );
+                    }
+
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: TextField(
@@ -1311,6 +1390,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
       ),
     );
   }
+
   Future<void> loadEditingData() async {
     final r = widget.editingReport!;
 
@@ -1359,6 +1439,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     setState(() {});
   }
+
   Future<void> showSuccessDialog(String message) async {
     showDialog(
       context: context,
@@ -1394,6 +1475,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     Navigator.pop(context);
   }
+
   bool validateForm() {
 
     if (selectedReportElement == null) {
@@ -1422,7 +1504,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
     }
 
     for (final field in customFields) {
-
       final value = controllers[field.campoPersonalizadoId]
           ?.text
           .trim() ?? "";
@@ -1440,6 +1521,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     return true;
   }
+
   Future<void> handleSubmit() async {
     final hasInternet = await NetworkInfo().hasInternet();
 

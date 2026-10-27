@@ -25,13 +25,14 @@ class CustomFieldAdapter extends TypeAdapter<CustomField> {
       obligatorio: fields[5] as bool,
       activo: fields[6] as bool,
       fechaActualizacion: fields[7] as String,
+      catalogoPersonalizadoId: fields[8] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, CustomField obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.campoPersonalizadoId)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class CustomFieldAdapter extends TypeAdapter<CustomField> {
       ..writeByte(6)
       ..write(obj.activo)
       ..writeByte(7)
-      ..write(obj.fechaActualizacion);
+      ..write(obj.fechaActualizacion)
+      ..writeByte(8)
+      ..write(obj.catalogoPersonalizadoId);
   }
 
   @override

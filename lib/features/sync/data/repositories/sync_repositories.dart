@@ -1,5 +1,6 @@
 import 'package:app_oca/features/sync/data/datasources/catalog_seed_datasource.dart';
 import 'package:hive/hive.dart';
+import '../../../reports/data/datasources/custom_catalogs_local_datasource.dart';
 
 import '../../../reports/data/datasources/custom_fields_local_datasource.dart';
 import '../../../reports/data/datasources/elements_detail_local_datasource.dart';
@@ -8,6 +9,7 @@ import '../../../reports/data/datasources/incident_types_local_datasource.dart';
 import '../../../reports/data/datasources/report_elements_local_datasource.dart';
 import '../../../reports/data/datasources/risk_levels_local_datasource.dart';
 import '../../../reports/data/datasources/technical_location_datasource.dart';
+import '../../../reports/domain/entities/custom_catalog.dart';
 import '../../../reports/domain/entities/custom_field.dart';
 import '../../../reports/domain/entities/element.dart';
 import '../../../reports/domain/entities/element_detail.dart';
@@ -33,6 +35,7 @@ class SyncRepository {
   final ElementDetailsLocalDatasource elementDetailsLocal;
   final TechnicalLocationsLocalDatasource technicalLocationsLocal;
   final CatalogSeedDatasource seedDatasource;
+  final CustomCatalogsLocalDatasource customCatalogsLocal;
   SyncRepository(
       this.remote,
       this.reportsLocal,
@@ -45,6 +48,7 @@ class SyncRepository {
       this.elementsCatalogLocal,
       this.technicalLocationsLocal,
       this.seedDatasource,
+      this.customCatalogsLocal,
       );
 
   Future<void> syncAllCatalogs({
@@ -165,6 +169,19 @@ class SyncRepository {
         .toList();
 
     await technicalLocationsLocal.saveTechnicalLocations(technicalLocations);
+
+    final customCatalogsData = await remote.syncCatalog(
+      endpoint: "catalogos/catalogos-personalizados",
+      unidadNegocioId: unidadNegocioId,
+      fechaActualizacion: fechaActualizacion,
+    );
+
+    final customCatalogs = customCatalogsData
+        .map((e) => CustomCatalog.fromJson(e))
+        .toList();
+
+    await customCatalogsLocal.saveCustomCatalogs(customCatalogs);
+    print("SYNC GUARDADOS CustomCatalogs: ${customCatalogs.length}");
 
     print("SINCRONIZACIÓN COMPLETA");
   }

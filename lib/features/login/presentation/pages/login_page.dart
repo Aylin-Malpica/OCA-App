@@ -1,3 +1,4 @@
+import 'package:app_oca/features/login/presentation/pages/userType_page.dart';
 import 'package:flutter/material.dart';
 import '../../../internal_register/pages/internal_register_preview_page.dart';
 import '../../data/repositories/login_repository.dart';
@@ -379,7 +380,9 @@ class _LoginPageState extends State<LoginPage> {
 
                             TextButton.icon(
                               onPressed: () {
-                                Navigator.pop(context);
+                                Navigator.pop(context,MaterialPageRoute(
+                                  builder: (_) => const UserTypePage(),
+                                ),);
                               },
                               icon: Icon(
                                 Icons.arrow_back,

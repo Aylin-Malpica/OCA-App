@@ -121,7 +121,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
     );
 
     return selectedElemento != null ||
-        selectedRiskLevelId != null ||
         selectedIncidentTypeId != null ||
         hasCustomText ||
         evidencias.isNotEmpty;
@@ -433,39 +432,25 @@ class _ReportFormPageState extends State<ReportFormPage> {
     for (final f in fields) {
       controllers[f.campoPersonalizadoId] = TextEditingController();
 
-      print("--- EVALUANDO CAMPO PERSONALIZADO ---");
-      print("Descripción: ${f.descripcion}");
-      print("TipoValorId: ${f.tipoValorId}");
-      print("TipoValorDesc: ${f.tipoValorDescripcion}");
-
-      // OJO AQUÍ: Tratamos de leer el ID del catálogo. Si tu clase CustomField no lo tiene mapeado, esto será null
       int? catId;
       try {
         catId = (f as dynamic).catalogoPersonalizadoId;
-      } catch(_) {}
-      print("CatalogoPersonalizadoId en el campo: $catId");
+      } catch (_) {}
 
-      if (f.tipoValorId == 4 || f.tipoValorDescripcion?.toLowerCase() == 'catalogo') {
-        print(">> ES TIPO CATÁLOGO");
+      if (f.tipoValorId == 4 ||
+          f.tipoValorDescripcion?.toLowerCase() == 'catalogo') {
         try {
-          if (catId == null) {
-            print(">> ERROR: El campo dice ser catálogo pero su catalogoPersonalizadoId ES NULL. La API no lo está enviando o Flutter no lo está mapeando.");
-            continue;
-          }
+          if (catId == null) continue;
 
           final cat = allCatalogs.firstWhere(
                 (c) => c.catalogoPersonalizadoId == catId,
           );
           availableCatalogs[f.campoPersonalizadoId] = cat;
-          print(">> ¡ÉXITO! Se encontró el catálogo con ID $catId y tiene ${cat.detalles.length} detalles.");
         } catch (e) {
           print(">> ERROR AL BUSCAR EL CATÁLOGO EN HIVE: $e");
         }
-      } else {
-        print(">> ES CAMPO DE TEXTO NORMAL");
       }
     }
-    print("=========================================\n");
 
     if (!mounted) return;
 
@@ -473,6 +458,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
       customFields = fields;
       riskLevels = risk;
       incidentTypes = incident;
+      selectedRiskLevelId = null; // Siempre por defecto null
     });
   }
 
@@ -483,14 +469,12 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     setState(() {
       technicalLocations = all;
-
       setDefaultTechnicalLocationFromUser();
     });
   }
 
   void setDefaultTechnicalLocationFromUser() {
     if (selectedTechnicalLocation != null) return;
-
     if (widget.user.ubicacionTecnicaId == 0) return;
 
     TechnicalLocation? defaultLocation;
@@ -503,8 +487,97 @@ class _ReportFormPageState extends State<ReportFormPage> {
     }
 
     if (defaultLocation == null) return;
-
     selectedTechnicalLocation = defaultLocation;
+  }
+
+  Future<void> showEvidencePickerOptions() async {
+    if (evidencias.length >= 5) {
+      showMsg("Máximo 5 fotos permitidas");
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bottomSheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const Text(
+                  "Agregar evidencia fotográfica",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.marBaltico,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.dorado.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_outlined,
+                      color: AppTheme.dorado,
+                    ),
+                  ),
+                  title: const Text(
+                    "Tomar fotografía",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: const Text("Usar la cámara del dispositivo"),
+                  onTap: () {
+                    Navigator.pop(bottomSheetContext);
+                    takePhoto();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.dorado.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.photo_library_outlined,
+                      color: AppTheme.dorado,
+                    ),
+                  ),
+                  title: const Text(
+                    "Elegir de la galería",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    "Puedes agregar hasta ${5 - evidencias.length} foto(s) más",
+                  ),
+                  onTap: () {
+                    Navigator.pop(bottomSheetContext);
+                    pickFromGallery();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> takePhoto() async {
@@ -517,7 +590,9 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     if (!status.isGranted) {
       if (status.isPermanentlyDenied) {
-        showMsg("El permiso de cámara está bloqueado. Actívalo desde configuración.");
+        showMsg(
+          "El permiso de cámara está bloqueado. Actívalo desde configuración.",
+        );
         await openAppSettings();
       } else {
         showMsg("Se necesita permiso de cámara para tomar evidencias.");
@@ -537,6 +612,35 @@ class _ReportFormPageState extends State<ReportFormPage> {
     }
   }
 
+  Future<void> pickFromGallery() async {
+    if (evidencias.length >= 5) {
+      showMsg("Máximo 5 fotos permitidas");
+      return;
+    }
+
+    try {
+      final pickedFiles = await _picker.pickMultiImage(
+        imageQuality: 70,
+      );
+
+      if (pickedFiles.isNotEmpty) {
+        final remainingSlots = 5 - evidencias.length;
+        final filesToAdd = pickedFiles.take(remainingSlots).map((x) => File(x.path)).toList();
+
+        setState(() {
+          evidencias.addAll(filesToAdd);
+        });
+
+        if (pickedFiles.length > remainingSlots) {
+          showMsg("Solo se agregaron $remainingSlots foto(s) (máximo 5 en total).");
+        }
+      }
+    } catch (e) {
+      showMsg("No se pudo abrir la galería: $e");
+    }
+  }
+
+
   String now() => DateTime.now().toIso8601String();
 
   Future<void> saveOrSend({bool send = false}) async {
@@ -553,7 +657,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
       final payload = {
         "reporteId": widget.report.reporteId,
         "usuarioMovilId": widget.user.usuarioId,
-        "nivelRiesgoId": selectedRiskLevelId,
+        "nivelRiesgoId": null, // <-- Se envía explícitamente null por defecto
         "tipoIncidenciaId": selectedIncidentTypeId,
         "reporteTipoElementoId":
         selectedReportElement!.reporteTipoElementoId,
@@ -580,31 +684,18 @@ class _ReportFormPageState extends State<ReportFormPage> {
       if (send && hasInternet) {
         final reportResponse = await reportsRemote.sendReport(payload);
 
-        if (reportResponse != null &&
-            reportResponse["success"] == true) {
+        if (reportResponse != null && reportResponse["success"] == true) {
           final data = reportResponse["data"] ?? {};
 
           resultadoReporteId = data["resultadoReporteId"] ?? 0;
           yaExistia = data["yaExistia"] ?? false;
 
           if (evidencias.isNotEmpty && resultadoReporteId > 0) {
-            print("🔵 CONVIRTIENDO IMÁGENES...");
-
-            final evidenciasBase64 =
-            await convertImagesToBase64(
+            final evidenciasBase64 = await convertImagesToBase64(
               evidencias.map((e) => e.path).toList(),
             );
 
-            print("========== JSON EVIDENCIAS ==========");
-            print(const JsonEncoder.withIndent('  ').convert({
-              "evidencias": evidenciasBase64
-                  .map((e) => {"base64": e})
-                  .toList(),
-            }));
-            print("=====================================");
-
-            final evidencesResponse =
-            await reportsRemote.sendEvidences(
+            final evidencesResponse = await reportsRemote.sendEvidences(
               resultadoReporteId: resultadoReporteId,
               evidenciasBase64: evidenciasBase64,
             );
@@ -624,9 +715,16 @@ class _ReportFormPageState extends State<ReportFormPage> {
         finalStatus = "draft";
       }
 
-      final selectedRisk = riskLevels.firstWhere(
-            (e) => e.id == selectedRiskLevelId,
-      );
+      // CORRECCIÓN: Evitar firstWhere sin fallback cuando selectedRiskLevelId es null
+      RiskLevel? selectedRisk;
+      if (selectedRiskLevelId != null) {
+        for (final r in riskLevels) {
+          if (r.id == selectedRiskLevelId) {
+            selectedRisk = r;
+            break;
+          }
+        }
+      }
 
       final selectedIncident = incidentTypes.firstWhere(
             (e) => e.id == selectedIncidentTypeId,
@@ -636,16 +734,16 @@ class _ReportFormPageState extends State<ReportFormPage> {
         return {
           "campoPersonalizadoId": f.campoPersonalizadoId,
           "descripcion": f.descripcion,
-          "valor":
-          controllers[f.campoPersonalizadoId]?.text.trim() ?? "",
+          "valor": controllers[f.campoPersonalizadoId]?.text.trim() ?? "",
         };
       }).toList();
 
+      // CORRECCIÓN: Se quitó el '!' de selectedRiskLevelId y se maneja de forma segura
       final localReport = LocalReport(
         numeroEmpleado: widget.user.numeroEmpleado,
         reporteId: widget.report.reporteId,
         usuarioMovilId: widget.user.usuarioId,
-        nivelRiesgoId: selectedRiskLevelId!,
+        nivelRiesgoId: selectedRiskLevelId ?? 0,
         tipoIncidenciaId: selectedIncidentTypeId!,
         reporteTipoElementoId:
         selectedReportElement!.reporteTipoElementoId,
@@ -660,25 +758,21 @@ class _ReportFormPageState extends State<ReportFormPage> {
         selectedReportElement!.reporteTipoElementoDescripcion,
         elementTypeDescription:
         selectedReportElement!.tipoElementoDescripcion,
-        riskLevelDescription: selectedRisk.descripcion,
+        riskLevelDescription: selectedRisk?.descripcion ?? "",
         incidentTypeDescription: selectedIncident.descripcion,
         elementoId: selectedElemento!.elementoId,
         elementoIdentificador: selectedElemento!.identificador,
         elementoResumen: selectedElemento!.identificador,
         resultadoReporteId: resultadoReporteId,
         yaExistia: yaExistia,
-        evidenciasPaths:
-        evidencias.map((e) => e.path).toList(),
+        evidenciasPaths: evidencias.map((e) => e.path).toList(),
         fechaActualizacion: now(),
-        ubicacionTecnicaId:
-        selectedTechnicalLocation!.ubicacionTecnicaId,
-
+        ubicacionTecnicaId: selectedTechnicalLocation!.ubicacionTecnicaId,
         ubicacionTecnicaDescripcion:
         selectedTechnicalLocation!.denominacion,
       );
 
-      if (widget.editingReport != null &&
-          widget.reportKey != null) {
+      if (widget.editingReport != null && widget.reportKey != null) {
         await localReportsLocal.updateReport(
           widget.reportKey,
           localReport,
@@ -826,65 +920,79 @@ class _ReportFormPageState extends State<ReportFormPage> {
               padding: const EdgeInsets.all(20),
               child: ListView(
                 children: [
-                  DropdownButtonFormField<ReportElement>(
-                    value: selectedReportElement,
-                    isExpanded: true,
-                    decoration: _inputDecoration(
-                      label: "Tipo de reporte",
-                      icon: Icons.assignment_outlined,
-                    ).copyWith(
-                      contentPadding: const EdgeInsets.only(
-                        top: 24,
-                        bottom: 18,
-                        left: 12,
-                        right: 12,
+                  Theme(
+                    data: Theme.of(context).copyWith(
+                      popupMenuTheme: const PopupMenuThemeData(
+                        position: PopupMenuPosition.under,
                       ),
                     ),
-                    items: reportElements.map((e) {
-                      return DropdownMenuItem<ReportElement>(
-                        value: e,
-                        child: Text(
-                          e.reporteTipoElementoDescripcion,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
+                    child: PopupMenuButton<ReportElement>(
+                      constraints: BoxConstraints(
+                        minWidth: MediaQuery.of(context).size.width - 32,
+                        maxWidth: MediaQuery.of(context).size.width - 32,
+                        maxHeight: 350,
+                      ),
+                      offset: const Offset(0, 8),
+                      itemBuilder: (context) {
+                        return reportElements.map((e) {
+                          return PopupMenuItem<ReportElement>(
+                            value: e,
+                            child: Text(
+                              e.reporteTipoElementoDescripcion,
+                              softWrap: true,
+                            ),
+                          );
+                        }).toList();
+                      },
+                      onSelected: (value) async {
+                        if (selectedReportElement?.reporteTipoElementoId ==
+                            value.reporteTipoElementoId) {
+                          return;
+                        }
+
+                        if (hasFormChanges) {
+                          final confirmed = await confirmChangeReportType();
+                          if (!confirmed) return;
+                        }
+
+                        resetDependentForm();
+
+                        setState(() {
+                          selectedReportElement = value;
+                        });
+
+                        await loadElementos(value.tipoElementoId);
+                        await loadDynamicCatalogs(value.reporteTipoElementoId);
+                      },
+                      child: InputDecorator(
+                        decoration: _inputDecoration(
+                          label: "Tipo de reporte",
+                          icon: Icons.assignment_outlined,
                         ),
-                      );
-                    }).toList(),
-                    selectedItemBuilder: (context) {
-                      return reportElements.map((e) {
-                        return Text(
-                          e.reporteTipoElementoDescripcion,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                        );
-                      }).toList();
-                    },
-                    onChanged: (value) async {
-                      if (value == null) return;
-
-                      if (selectedReportElement?.reporteTipoElementoId ==
-                          value.reporteTipoElementoId) {
-                        return;
-                      }
-
-                      if (hasFormChanges) {
-                        final confirmed = await confirmChangeReportType();
-                        if (!confirmed) return;
-                      }
-
-                      resetDependentForm();
-
-                      setState(() {
-                        selectedReportElement = value;
-                      });
-
-                      await loadElementos(value.tipoElementoId);
-                      await loadDynamicCatalogs(
-                        value.reporteTipoElementoId,
-                      );
-                    },
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                selectedReportElement?.reporteTipoElementoDescripcion ??
+                                    "Selecciona una opción",
+                                softWrap: true,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: selectedReportElement == null
+                                      ? Colors.grey.shade600
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: Icon(Icons.arrow_drop_down, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 20),
@@ -893,7 +1001,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
                     key: ValueKey(autocompleteRefreshKey),
                     displayStringForOption: (Elemento option) =>
                     option.identificador,
-                    optionsBuilder: (TextEditingValue textEditingValue) {
+                    optionsBuilder:
+                        (TextEditingValue textEditingValue) {
                       if (textEditingValue.text.isEmpty) {
                         return elementos;
                       }
@@ -941,18 +1050,20 @@ class _ReportFormPageState extends State<ReportFormPage> {
                           elevation: 4,
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
-                            width:
-                            MediaQuery.of(context).size.width * 0.85,
+                            width: MediaQuery.of(context).size.width *
+                                0.85,
                             constraints:
                             const BoxConstraints(maxHeight: 250),
                             child: ListView.builder(
                               padding: EdgeInsets.zero,
                               itemCount: options.length,
                               itemBuilder: (context, index) {
-                                final option = options.elementAt(index);
+                                final option =
+                                options.elementAt(index);
 
                                 return ListTile(
-                                  leading: const Icon(Icons.qr_code_2),
+                                  leading:
+                                  const Icon(Icons.qr_code_2),
                                   title: Text(option.identificador),
                                   onTap: () => onSelected(option),
                                 );
@@ -980,7 +1091,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
@@ -988,8 +1100,10 @@ class _ReportFormPageState extends State<ReportFormPage> {
                                   width: 38,
                                   height: 38,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.dorado.withOpacity(0.14),
-                                    borderRadius: BorderRadius.circular(12),
+                                    color: AppTheme.dorado
+                                        .withOpacity(0.14),
+                                    borderRadius:
+                                    BorderRadius.circular(12),
                                   ),
                                   child: const Icon(
                                     Icons.info_outline,
@@ -1000,7 +1114,10 @@ class _ReportFormPageState extends State<ReportFormPage> {
                                 Expanded(
                                   child: Text(
                                     "Detalle del elemento",
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.marBaltico,
                                     ),
@@ -1020,14 +1137,17 @@ class _ReportFormPageState extends State<ReportFormPage> {
                             if (selectedElementDetails.isEmpty)
                               const Text(
                                 "Sin detalles disponibles",
-                                style: TextStyle(color: AppTheme.textColor),
+                                style: TextStyle(
+                                    color: AppTheme.textColor),
                               )
                             else
                               ...selectedElementDetails.map((detail) {
                                 return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.only(
+                                      bottom: 8),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "• ",
@@ -1048,7 +1168,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                                     ],
                                   ),
                                 );
-                              }).toList(),
+                              }),
                           ],
                         ),
                       ),
@@ -1057,38 +1177,65 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
                   const SizedBox(height: 20),
 
-                  DropdownButtonFormField<int>(
-                    value: selectedIncidentTypeId,
-                    decoration: _inputDecoration(
-                      label: "Tipo incidencia",
-                      icon: Icons.warning_amber_outlined,
+                  Theme(
+                    data: Theme.of(context).copyWith(
+                      popupMenuTheme: const PopupMenuThemeData(
+                        position: PopupMenuPosition.under,
+                      ),
                     ),
-                    items: incidentTypes.map((e) {
-                      return DropdownMenuItem(
-                        value: e.id,
-                        child: Text(e.descripcion),
-                      );
-                    }).toList(),
-                    onChanged: (v) =>
-                        setState(() => selectedIncidentTypeId = v),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  DropdownButtonFormField<int>(
-                    value: selectedRiskLevelId,
-                    decoration: _inputDecoration(
-                      label: "Nivel riesgo",
-                      icon: Icons.health_and_safety_outlined,
+                    child: PopupMenuButton<int>(
+                      constraints: BoxConstraints(
+                        minWidth: MediaQuery.of(context).size.width - 32,
+                        maxWidth: MediaQuery.of(context).size.width - 32,
+                        maxHeight: 350,
+                      ),
+                      offset: const Offset(0, 8),
+                      itemBuilder: (context) {
+                        return incidentTypes.map((e) {
+                          return PopupMenuItem<int>(
+                            value: e.id,
+                            child: Text(
+                              e.descripcion,
+                              softWrap: true,
+                            ),
+                          );
+                        }).toList();
+                      },
+                      onSelected: (value) {
+                        setState(() => selectedIncidentTypeId = value);
+                      },
+                      child: InputDecorator(
+                        decoration: _inputDecoration(
+                          label: "Tipo incidencia",
+                          icon: Icons.warning_amber_outlined,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                incidentTypes
+                                    .where((e) => e.id == selectedIncidentTypeId)
+                                    .map((e) => e.descripcion)
+                                    .firstOrNull ??
+                                    "Selecciona una opción",
+                                softWrap: true,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: selectedIncidentTypeId == null
+                                      ? Colors.grey.shade600
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: Icon(Icons.arrow_drop_down, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    items: riskLevels.map((e) {
-                      return DropdownMenuItem(
-                        value: e.id,
-                        child: Text(e.descripcion),
-                      );
-                    }).toList(),
-                    onChanged: (v) =>
-                        setState(() => selectedRiskLevelId = v),
                   ),
 
                   const SizedBox(height: 20),
@@ -1100,8 +1247,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                       icon: Icons.location_on_outlined,
                     ),
                     items: technicalLocations.map((location) {
-                      final text =
-                          "${location.denominacion}  ";
+                      final text = "${location.denominacion}  ";
 
                       return DropdownMenuItem<TechnicalLocation>(
                         value: location,
@@ -1115,8 +1261,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                     }).toList(),
                     selectedItemBuilder: (context) {
                       return technicalLocations.map((location) {
-                        final text =
-                            "${location.descripcionZona}";
+                        final text = location.descripcionZona;
 
                         return Text(
                           text,
@@ -1140,22 +1285,28 @@ class _ReportFormPageState extends State<ReportFormPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  // MAPEO DE CAMPOS DINÁMICOS CON PRINTS PARA DEBUGGEAR
                   ...customFields.map((f) {
-                    final isCatalog = f.tipoValorId == 4 || f.tipoValorDescripcion?.toLowerCase() == 'catalogo';
-                    final catalogInfo = availableCatalogs[f.campoPersonalizadoId];
-
-                    print("BUILDING CAMPO: ${f.descripcion} | isCatalog: $isCatalog | catalogInfo != null: ${catalogInfo != null}");
+                    final isCatalog = f.tipoValorId == 4 ||
+                        f.tipoValorDescripcion?.toLowerCase() ==
+                            'catalogo';
+                    final catalogInfo =
+                    availableCatalogs[f.campoPersonalizadoId];
 
                     if (isCatalog && catalogInfo != null) {
-                      final activeDetails = catalogInfo.detalles.where((d) => d.activo).toList();
+                      final activeDetails = catalogInfo.detalles
+                          .where((d) => d.activo)
+                          .toList();
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: DropdownButtonFormField<String>(
-                          value: controllers[f.campoPersonalizadoId]!.text.isEmpty
+                          value: controllers[f.campoPersonalizadoId]!
+                              .text
+                              .isEmpty
                               ? null
-                              : controllers[f.campoPersonalizadoId]!.text,
+                              : controllers[f.campoPersonalizadoId]!
+                              .text,
+                          isExpanded: true,
                           decoration: _inputDecoration(
                             label: f.descripcion,
                             icon: Icons.list_alt,
@@ -1169,7 +1320,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
                           onChanged: (val) {
                             if (val != null) {
                               setState(() {
-                                controllers[f.campoPersonalizadoId]!.text = val;
+                                controllers[f.campoPersonalizadoId]!
+                                    .text = val;
                               });
                             }
                           },
@@ -1180,7 +1332,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: TextField(
-                        controller: controllers[f.campoPersonalizadoId],
+                        controller:
+                        controllers[f.campoPersonalizadoId],
                         decoration: _inputDecoration(
                           label: f.descripcion,
                           icon: Icons.edit_note,
@@ -1216,8 +1369,10 @@ class _ReportFormPageState extends State<ReportFormPage> {
                               width: 38,
                               height: 38,
                               decoration: BoxDecoration(
-                                color: AppTheme.dorado.withOpacity(0.14),
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppTheme.dorado
+                                    .withOpacity(0.14),
+                                borderRadius:
+                                BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.photo_camera_outlined,
@@ -1244,14 +1399,18 @@ class _ReportFormPageState extends State<ReportFormPage> {
                                 color: widget.report.requiereEvidencia
                                     ? Colors.red.withOpacity(0.12)
                                     : Colors.green.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius:
+                                BorderRadius.circular(20),
                               ),
                               child: Text(
-                                widget.report.requiereEvidencia ? "Obligatoria" : "Opcional",
+                                widget.report.requiereEvidencia
+                                    ? "Obligatoria"
+                                    : "Opcional",
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: widget.report.requiereEvidencia
+                                  color:
+                                  widget.report.requiereEvidencia
                                       ? Colors.red
                                       : Colors.green,
                                 ),
@@ -1259,9 +1418,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 14),
-
                         Wrap(
                           spacing: 10,
                           runSpacing: 10,
@@ -1270,7 +1427,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
                               return Stack(
                                 children: [
                                   ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius:
+                                    BorderRadius.circular(12),
                                     child: Image.file(
                                       file,
                                       width: 100,
@@ -1301,19 +1459,21 @@ class _ReportFormPageState extends State<ReportFormPage> {
                                 ],
                               );
                             }),
-
                             if (evidencias.length < 5)
                               GestureDetector(
-                                onTap: takePhoto,
+                                onTap: showEvidencePickerOptions,
                                 child: Container(
                                   width: 100,
                                   height: 100,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.dorado.withOpacity(0.08),
+                                    color: AppTheme.dorado
+                                        .withOpacity(0.08),
                                     border: Border.all(
-                                      color: AppTheme.dorado.withOpacity(0.45),
+                                      color: AppTheme.dorado
+                                          .withOpacity(0.45),
                                     ),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius:
+                                    BorderRadius.circular(12),
                                   ),
                                   child: const Icon(
                                     Icons.camera_alt,
@@ -1340,15 +1500,20 @@ class _ReportFormPageState extends State<ReportFormPage> {
                         height: 52,
                         child: ElevatedButton.icon(
                           onPressed: saving ? null : handleSubmit,
-                          icon: Icon(hasInternet ? Icons.send : Icons.save),
+                          icon: Icon(
+                              hasInternet ? Icons.send : Icons.save),
                           label: Text(
-                            hasInternet ? "Guardar reporte" : "Guardar borrador",
+                            hasInternet
+                                ? "Guardar reporte"
+                                : "Guardar borrador",
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.dorado,
                             foregroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.grey.shade300,
-                            disabledForegroundColor: Colors.grey.shade600,
+                            disabledBackgroundColor:
+                            Colors.grey.shade300,
+                            disabledForegroundColor:
+                            Colors.grey.shade600,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1361,7 +1526,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
                 ],
               ),
             ),
-
             if (saving)
               Container(
                 color: Colors.black.withOpacity(0.4),
@@ -1394,7 +1558,7 @@ class _ReportFormPageState extends State<ReportFormPage> {
   Future<void> loadEditingData() async {
     final r = widget.editingReport!;
 
-    selectedRiskLevelId = r.nivelRiesgoId;
+    selectedRiskLevelId = null; // Siempre null por defecto
     selectedIncidentTypeId = r.tipoIncidenciaId;
 
     evidencias = r.evidenciasPaths
@@ -1428,12 +1592,9 @@ class _ReportFormPageState extends State<ReportFormPage> {
           campo["valor"] ?? "";
     }
 
-    selectedTechnicalLocation =
-        technicalLocations.firstWhere(
-              (e) =>
-          e.ubicacionTecnicaId ==
-              r.ubicacionTecnicaId,
-        );
+    selectedTechnicalLocation = technicalLocations.firstWhere(
+          (e) => e.ubicacionTecnicaId == r.ubicacionTecnicaId,
+    );
 
     if (!mounted) return;
 
@@ -1472,12 +1633,10 @@ class _ReportFormPageState extends State<ReportFormPage> {
     if (!mounted) return;
 
     Navigator.pop(context);
-
     Navigator.pop(context);
   }
 
   bool validateForm() {
-
     if (selectedReportElement == null) {
       showMsg("Selecciona tipo de reporte");
       return false;
@@ -1485,11 +1644,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
 
     if (selectedElemento == null) {
       showMsg("Selecciona elemento");
-      return false;
-    }
-
-    if (selectedRiskLevelId == null) {
-      showMsg("Selecciona nivel de riesgo");
       return false;
     }
 
@@ -1504,9 +1658,8 @@ class _ReportFormPageState extends State<ReportFormPage> {
     }
 
     for (final field in customFields) {
-      final value = controllers[field.campoPersonalizadoId]
-          ?.text
-          .trim() ?? "";
+      final value =
+          controllers[field.campoPersonalizadoId]?.text.trim() ?? "";
 
       if (field.obligatorio == true && value.isEmpty) {
         showMsg("El campo '${field.descripcion}' es obligatorio");
@@ -1535,7 +1688,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
           titlePadding: EdgeInsets.zero,
           contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
           actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-
           title: Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
@@ -1564,7 +1716,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
               ],
             ),
           ),
-
           content: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1607,7 +1758,6 @@ class _ReportFormPageState extends State<ReportFormPage> {
               ),
             ],
           ),
-
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),

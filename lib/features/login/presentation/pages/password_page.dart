@@ -46,26 +46,38 @@ class _PasswordPageState extends State<PasswordPage> {
 
     try {
       String currentHash = widget.user.contrasenia;
+      bool currentActivo = widget.user.activo;
+      bool currentAccesoPendiente = widget.user.accesoPendiente;
+
       final hasInternet = await NetworkInfo().hasInternet();
 
       if (hasInternet) {
-        // 1. SINCRONIZAR HASH ONLINE USANDO TU DATASOURCE
         try {
           print("🌐 Validando online para empleado: ${widget.user.numeroEmpleado}");
 
-          // NOTA: Instancia tu ApiClient según como lo manejes en tu arquitectura.
-          // Si usas GetIt o Provider, obtén la instancia desde allí.
           final apiClient = ApiClient();
           final remoteDS = LoginRemoteDatasource(apiClient);
 
           final decodedData = await remoteDS.verifyEmployee(widget.user.numeroEmpleado.toString());
 
           if (decodedData != null && decodedData['success'] == true) {
-            if (decodedData['data'] != null && decodedData['data']['userData'] != null) {
-              final fetchedHash = decodedData['data']['userData']['contrasenia'];
+            final userData = decodedData['data']?['userData'];
+
+            if (userData != null) {
+              final fetchedHash = userData['contrasenia'];
               if (fetchedHash != null && fetchedHash.toString().isNotEmpty) {
                 currentHash = fetchedHash;
                 print("🔄 Hash actualizado exitosamente desde el servidor");
+              }
+
+              if (userData.containsKey('activo')) {
+                currentActivo = userData['activo'] == true || userData['activo'] == 1;
+                print("🔄 Estado 'activo' sincronizado desde servidor: $currentActivo");
+              }
+
+              if (userData.containsKey('accesoPendiente')) {
+                currentAccesoPendiente =
+                    userData['accesoPendiente'] == true || userData['accesoPendiente'] == 1;
               }
             }
           } else {
@@ -73,10 +85,15 @@ class _PasswordPageState extends State<PasswordPage> {
           }
         } catch (e) {
           print("⚠️ Error en la validación remota: $e");
+
         }
       }
 
-      // 2. VALIDAR CONTRASEÑA
+      if (!currentActivo) {
+        showMsg("Tu usuario está inactivo. Contacta al administrador.");
+        return;
+      }
+
       final isValid = await PasswordHasher.verify(password, currentHash);
 
       if (!isValid) {
@@ -84,17 +101,11 @@ class _PasswordPageState extends State<PasswordPage> {
         return;
       }
 
-      if (!widget.user.activo) {
-        showMsg("Tu usuario está inactivo. Contacta al administrador.");
-        return;
-      }
-
-      if (widget.user.accesoPendiente) {
+      if (currentAccesoPendiente) {
         await showAccessPendingDialog();
         return;
       }
 
-      // 3. ACTUALIZAR BASE DE DATOS LOCAL
       final local = LoginLocalDatasource();
       final updatedUser = User(
         usuarioId: widget.user.usuarioId,
@@ -105,11 +116,11 @@ class _PasswordPageState extends State<PasswordPage> {
         departamento: widget.user.departamento,
         ubicacionTecnica: widget.user.ubicacionTecnica,
         unidadNegocioId: widget.user.unidadNegocioId,
-        activo: widget.user.activo,
+        activo: currentActivo,
         numeroEmpleado: widget.user.numeroEmpleado,
         departamentoId: widget.user.departamentoId,
         ubicacionTecnicaId: widget.user.ubicacionTecnicaId,
-        accesoPendiente: widget.user.accesoPendiente,
+        accesoPendiente: currentAccesoPendiente,
       );
 
       await local.saveUser(updatedUser);
